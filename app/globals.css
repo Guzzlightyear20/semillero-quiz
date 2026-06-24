@@ -18,7 +18,7 @@ body {
   background: var(--sq-bg);
   color: var(--sq-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 .sq-card {
