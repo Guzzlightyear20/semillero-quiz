@@ -105,64 +105,36 @@ function EditorQuiz() {
   )
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="sq-editor-layout">
 
       {/* SIDEBAR */}
-      <aside style={{
-        width: 220, flexShrink: 0,
-        background: '#0A0C0F',
-        borderRight: '0.5px solid var(--sq-border)',
-        display: 'flex', flexDirection: 'column',
-        overflowY: 'auto'
-      }}>
+      <aside className="sq-editor-sidebar">
         <div style={{ padding: '14px 12px', borderBottom: '0.5px solid var(--sq-border)' }}>
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="Título del quiz"
-            style={{
-              background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)',
-              borderRadius: 8, padding: '8px 10px', color: '#fff',
-              fontSize: 13, fontWeight: 700, width: '100%', outline: 'none', boxSizing: 'border-box'
-            }}
+            style={{ background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 13, fontWeight: 700, width: '100%', outline: 'none', boxSizing: 'border-box' as const }}
           />
         </div>
 
-        <div style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="sq-editor-sidebar-list">
           {questions.map((q, i) => (
             <div
               key={i}
               onClick={() => setActive(i)}
-              style={{
-                background: active === i ? 'rgba(62,207,163,.12)' : 'var(--sq-subtle)',
-                border: `1px solid ${active === i ? 'var(--sq-green)' : 'var(--sq-border)'}`,
-                borderRadius: 10, padding: '10px 12px', cursor: 'pointer',
-                display: 'flex', alignItems: 'flex-start', gap: 8
-              }}
+              className="sq-editor-sidebar-item"
+              style={{ background: active === i ? 'rgba(62,207,163,.12)' : 'var(--sq-subtle)', border: `1px solid ${active === i ? 'var(--sq-green)' : 'var(--sq-border)'}`, borderRadius: 10, padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 8 }}
             >
-              <span style={{ fontSize: 11, fontWeight: 700, color: active === i ? 'var(--sq-green)' : 'var(--sq-muted)', minWidth: 16, paddingTop: 1 }}>
-                {i + 1}
-              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: active === i ? 'var(--sq-green)' : 'var(--sq-muted)', minWidth: 16, paddingTop: 1 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontSize: 12, fontWeight: 600, color: '#fff', margin: '0 0 4px',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  {q.text || 'Sin pregunta'}
-                </p>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.timeLimit}s</span>
-                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>·</span>
-                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.type === 'truefalse' ? 'V/F' : q.type === 'wordcloud' ? '☁️' : 'Quiz'}</span>
+                <p style={{ fontSize: 12, fontWeight: 600, color: '#fff', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.text || 'Sin pregunta'}</p>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.timeLimit}s · {q.type === 'truefalse' ? 'V/F' : q.type === 'wordcloud' ? '☁️' : 'Quiz'}</span>
                 </div>
               </div>
               {questions.length > 1 && (
-                <button
-                  onClick={e => { e.stopPropagation(); removeQuestion(i) }}
-                  style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 14, padding: '0 0 0 4px', lineHeight: 1 }}
-                >
-                  ×
-                </button>
+                <button onClick={e => { e.stopPropagation(); removeQuestion(i) }} style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 14, padding: '0 0 0 4px', lineHeight: 1 }}>×</button>
               )}
             </div>
           ))}
@@ -170,17 +142,7 @@ function EditorQuiz() {
 
         <div style={{ padding: 10, borderTop: '0.5px solid var(--sq-border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {QUESTION_TYPES.map(({ type, label }) => (
-            <button
-              key={type}
-              onClick={() => addQuestion(type)}
-              style={{
-                width: '100%',
-                background: type === 'quiz' ? 'var(--sq-green)' : type === 'truefalse' ? 'rgba(62,207,163,.2)' : 'rgba(92,107,192,.2)',
-                border: `0.5px solid ${type === 'quiz' ? 'transparent' : 'var(--sq-border)'}`,
-                color: type === 'quiz' ? '#0D4A38' : '#fff',
-                fontWeight: 700, fontSize: 12, padding: '8px', borderRadius: 8, cursor: 'pointer'
-              }}
-            >
+            <button key={type} onClick={() => addQuestion(type)} style={{ width: '100%', background: type === 'quiz' ? 'var(--sq-green)' : type === 'truefalse' ? 'rgba(62,207,163,.2)' : 'rgba(92,107,192,.2)', border: `0.5px solid ${type === 'quiz' ? 'transparent' : 'var(--sq-border)'}`, color: type === 'quiz' ? '#0D4A38' : '#fff', fontWeight: 700, fontSize: 12, padding: '8px', borderRadius: 8, cursor: 'pointer' }}>
               + {label}
             </button>
           ))}
@@ -188,14 +150,10 @@ function EditorQuiz() {
       </aside>
 
       {/* MAIN EDITOR */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <main className="sq-editor-main">
 
         {/* Top bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', borderBottom: '0.5px solid var(--sq-border)',
-          background: '#0A0C0F'
-        }}>
+        <div className="sq-editor-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid var(--sq-border)', background: '#0A0C0F' }}>
           <button
             onClick={() => router.back()}
             style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
@@ -220,7 +178,7 @@ function EditorQuiz() {
         </div>
 
         {/* Question area */}
-        <div style={{ flex: 1, padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto' }}>
+        <div className="sq-editor-question-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
 
           {/* Tipo de pregunta */}
           <div style={{ display: 'flex', gap: 8 }}>

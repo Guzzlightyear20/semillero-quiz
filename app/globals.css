@@ -112,3 +112,71 @@ body {
   color: rgba(255,255,255,.8);
   font-weight: 600;
 }
+
+/* ── Responsive utilities ── */
+.sq-editor-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+.sq-editor-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #0A0C0F;
+  border-right: 0.5px solid var(--sq-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sq-editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sq-host-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.sq-admin-layout {
+  min-height: 100vh;
+  padding: 20px 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  /* Editor: sidebar becomes top strip */
+  .sq-editor-layout { flex-direction: column; height: auto; min-height: 100vh; overflow: auto; }
+  .sq-editor-sidebar { width: 100%; border-right: none; border-bottom: 0.5px solid var(--sq-border); max-height: none; overflow: visible; }
+  .sq-editor-sidebar-list { display: flex; flex-direction: row; overflow-x: auto; padding: 8px; gap: 8px; }
+  .sq-editor-sidebar-item { min-width: 120px; flex-shrink: 0; }
+  .sq-editor-main { overflow: visible; }
+  .sq-editor-question-area { padding: 16px; gap: 14px; }
+  .sq-editor-topbar { padding: 10px 12px; }
+  .sq-editor-topbar-title { display: none; }
+
+  /* Host: smaller fonts, tighter padding */
+  .sq-host-layout { padding: 12px; }
+  .sq-host-question h2 { font-size: 18px !important; }
+  .sq-host-options { grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  .sq-host-options > div { padding: 12px !important; }
+  .sq-host-podium { gap: 6px !important; }
+
+  /* Admin: stack header */
+  .sq-admin-header { flex-direction: column; align-items: flex-start !important; gap: 12px; }
+  .sq-admin-header-logo { display: none; }
+
+  /* Quiz card actions */
+  .sq-quiz-actions { flex-direction: column; }
+}
+
+@media (min-width: 641px) {
+  .sq-editor-sidebar-list { display: flex; flex-direction: column; padding: 8px; gap: 6px; flex: 1; }
+  .sq-editor-question-area { padding: 24px 32px; gap: 20px; }
+  .sq-editor-topbar { padding: 12px 20px; }
+}

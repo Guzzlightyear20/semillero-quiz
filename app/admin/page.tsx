@@ -93,23 +93,22 @@ export default function AdminPage() {
   )
 
   return (
-    <main className="min-h-screen px-4 py-8" style={{maxWidth:600,margin:'0 auto'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:28}}>
+    <main className="sq-admin-layout">
+      <div className="sq-admin-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <Image src="/logo.png" alt="Semillero Digital" width={120} height={46} style={{objectFit:'contain',filter:'brightness(0) invert(1)'}} />
-          <div style={{width:'0.5px',height:32,background:'var(--sq-border)'}}/>
+          <Image src="/logo.png" alt="Semillero Digital" width={110} height={42} style={{objectFit:'contain',filter:'brightness(0) invert(1)'}} className="sq-admin-header-logo" />
           <h1 style={{fontSize:20,fontWeight:900,margin:0}}>Mis quizzes</h1>
         </div>
-        <div style={{display:'flex',gap:8}}>
+        <div style={{display:'flex',gap:8,flexShrink:0}}>
           <Link
             href="/admin/crear-quiz"
-            style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:700,fontSize:13,padding:'8px 14px',borderRadius:10,textDecoration:'none',display:'inline-block'}}
+            style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:700,fontSize:13,padding:'8px 14px',borderRadius:10,textDecoration:'none',display:'inline-block',whiteSpace:'nowrap'}}
           >
             + Nuevo
           </Link>
           <button
             onClick={handleLogout}
-            style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontSize:13,padding:'8px 14px',borderRadius:10,cursor:'pointer'}}
+            style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontSize:13,padding:'8px 14px',borderRadius:10,cursor:'pointer',whiteSpace:'nowrap'}}
           >
             Salir
           </button>
@@ -141,17 +140,17 @@ export default function AdminPage() {
                   {launching === q.id ? '...' : '▶ Lanzar'}
                 </button>
               </div>
-              <div style={{display:'flex',gap:8,marginTop:12,borderTop:'0.5px solid var(--sq-border)',paddingTop:12}}>
+              <div className="sq-quiz-actions" style={{display:'flex',gap:8,marginTop:12,borderTop:'0.5px solid var(--sq-border)',paddingTop:12}}>
                 <Link
                   href={`/admin/crear-quiz?id=${q.id}`}
-                  style={{flex:1,textAlign:'center',background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'#fff',fontWeight:600,fontSize:13,padding:'8px',borderRadius:8,textDecoration:'none',display:'block'}}
+                  style={{flex:1,textAlign:'center',background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'#fff',fontWeight:600,fontSize:13,padding:'10px 8px',borderRadius:8,textDecoration:'none',display:'block'}}
                 >
                   ✏️ Editar
                 </Link>
                 <button
                   onClick={() => handleDelete(q.id, q.title)}
                   disabled={deleting === q.id}
-                  style={{flex:1,background:'rgba(248,113,113,.1)',border:'0.5px solid rgba(248,113,113,.3)',color:'#F87171',fontWeight:600,fontSize:13,padding:'8px',borderRadius:8,cursor:'pointer'}}
+                  style={{flex:1,background:'rgba(248,113,113,.1)',border:'0.5px solid rgba(248,113,113,.3)',color:'#F87171',fontWeight:600,fontSize:13,padding:'10px 8px',borderRadius:8,cursor:'pointer'}}
                 >
                   {deleting === q.id ? '...' : '🗑️ Eliminar'}
                 </button>

@@ -78,7 +78,7 @@ export default function HostPage() {
   const maxWordCount = wordCloud[0]?.count ?? 1
 
   return (
-    <main className="min-h-screen flex flex-col p-6" style={{maxWidth:900,margin:'0 auto'}}>
+    <main className="sq-host-layout">
 
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
@@ -164,7 +164,7 @@ export default function HostPage() {
 
           {/* Opciones quiz/truefalse */}
           {qType !== 'wordcloud' && (
-            <div style={{display:'grid',gridTemplateColumns: qType==='truefalse'?'1fr 1fr':'1fr 1fr',gap:12,flex:1}}>
+            <div className="sq-host-options" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1}}>
               {(qType==='truefalse'
                 ? [{label:'✅ Verdadero',color:'#3ECFA3',bg:'rgba(62,207,163,.2)',border:'rgba(62,207,163,.5)'},
                    {label:'❌ Falso',color:'#E84530',bg:'rgba(232,69,48,.2)',border:'rgba(232,69,48,.5)'}]
@@ -278,7 +278,7 @@ export default function HostPage() {
 
           {/* PODIO top 3 */}
           {sortedPlayers.length >= 1 && (
-            <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center',gap:12,padding:'0 16px'}}>
+            <div className="sq-host-podium" style={{display:'flex',alignItems:'flex-end',justifyContent:'center',gap:12,padding:'0 16px'}}>
               {/* 2do lugar */}
               {sortedPlayers[1] && (
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,flex:1}}>
