@@ -139,7 +139,7 @@ function EditorQuiz() {
       {/* SIDEBAR */}
       <aside className="sq-editor-sidebar">
         <div style={{ padding: '12px', borderBottom: '0.5px solid var(--sq-border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Image src="/logo.png" alt="Semillero Digital" width={130} height={50} style={{ objectFit: 'contain', filter: 'none' }} />
+          <Image src="/logo.png" alt="Semillero Digital" width={130} height={50} style={{ objectFit: 'contain', filter: 'none' }} className="sq-editor-sidebar-logo" />
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -338,7 +338,7 @@ function EditorQuiz() {
           {/* Answer options — condicional por tipo */}
           {(q.type ?? 'quiz') === 'quiz' && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="sq-editor-answers" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 {q.options.map((opt, oi) => (
                   <div key={oi} style={{ background: ANS_BG[oi], border: `2px solid ${q.correctIndex === oi ? ANS_COLORS[oi] : 'rgba(255,255,255,.08)'}`, borderRadius: 14, padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontSize: 18, color: ANS_COLORS[oi], fontWeight: 900, width: 28, textAlign: 'center', flexShrink: 0 }}>{ANS_SHAPES[oi]}</span>

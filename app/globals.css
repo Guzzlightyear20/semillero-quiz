@@ -173,6 +173,12 @@ body {
 
   /* Quiz card actions */
   .sq-quiz-actions { flex-direction: column; }
+
+  /* Editor: opciones de respuesta en 1 columna */
+  .sq-editor-answers { grid-template-columns: 1fr !important; }
+
+  /* Editor: ocultar logo en sidebar mobile */
+  .sq-editor-sidebar-logo { display: none; }
 }
 
 @media (min-width: 641px) {
