@@ -127,8 +127,8 @@ export default function AdminPage() {
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <Image src="/logo.png" alt="Semillero Digital" width={110} height={42} style={{objectFit:'contain',filter:'none'}} className="sq-admin-header-logo" />
           <div>
-            <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Panel de</p>
-            <h1 style={{fontSize:18,fontWeight:900,margin:0}}>{teacher.name}</h1>
+            <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Panel de</p>
+            <h1 style={{fontSize:17,fontWeight:700,margin:0,WebkitFontSmoothing:'subpixel-antialiased'}}>{teacher.name}</h1>
           </div>
         </div>
         <div style={{display:'flex',gap:8,flexShrink:0}}>
