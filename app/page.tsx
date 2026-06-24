@@ -1,17 +1,21 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-xs flex flex-col items-center gap-8">
 
-        <div className="text-center">
-          <div className="sq-chip mb-5" style={{color:'var(--sq-green)'}}>
-            <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-green)',display:'inline-block'}}/>
-            Semillero Digital
-          </div>
-          <h1 style={{fontSize:52,fontWeight:900,lineHeight:1.05,margin:'0 0 10px',letterSpacing:'-1px'}}>
-            Semillero<br/>
+        <div className="text-center flex flex-col items-center">
+          <Image
+            src="/logo.png"
+            alt="Semillero Digital"
+            width={200}
+            height={80}
+            style={{objectFit:'contain',marginBottom:20,filter:'brightness(0) invert(1)'}}
+            priority
+          />
+          <h1 style={{fontSize:48,fontWeight:900,lineHeight:1.05,margin:'0 0 8px',letterSpacing:'-1px'}}>
             <span style={{color:'var(--sq-green)'}}>Quiz</span>
           </h1>
           <p style={{color:'var(--sq-muted)',fontSize:15,margin:0}}>Aprendé jugando en clase</p>

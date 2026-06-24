@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { getQuizzesByHost, createRoom } from '@/lib/rooms'
 import type { Quiz } from '@/types'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const ADMIN_ID = 'semillero-admin'
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'semillero2025'
@@ -60,13 +61,10 @@ export default function AdminPage() {
   if (!authed) return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-xs flex flex-col gap-5">
-        <div className="text-center">
-          <div className="sq-chip mb-4" style={{display:'inline-flex',color:'var(--sq-orange)'}}>
-            <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-orange)',display:'inline-block'}}/>
-            Panel del profe
-          </div>
-          <h1 style={{fontSize:30,fontWeight:900,margin:0}}>Bienvenido</h1>
-          <p style={{color:'var(--sq-muted)',fontSize:14,marginTop:6}}>Ingresá tu contraseña para continuar</p>
+        <div className="text-center flex flex-col items-center">
+          <Image src="/logo.png" alt="Semillero Digital" width={180} height={70} style={{objectFit:'contain',marginBottom:16,filter:'brightness(0) invert(1)'}} priority />
+          <h1 style={{fontSize:24,fontWeight:900,margin:'0 0 4px'}}>Panel del profe</h1>
+          <p style={{color:'var(--sq-muted)',fontSize:14,margin:0}}>Ingresá tu contraseña para continuar</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-3">
           <input
@@ -88,12 +86,10 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen px-4 py-8" style={{maxWidth:600,margin:'0 auto'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:28}}>
-        <div>
-          <div className="sq-chip mb-2" style={{color:'var(--sq-green)'}}>
-            <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-green)',display:'inline-block'}}/>
-            Semillero Digital
-          </div>
-          <h1 style={{fontSize:24,fontWeight:900,margin:0}}>Mis quizzes</h1>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <Image src="/logo.png" alt="Semillero Digital" width={120} height={46} style={{objectFit:'contain',filter:'brightness(0) invert(1)'}} />
+          <div style={{width:'0.5px',height:32,background:'var(--sq-border)'}}/>
+          <h1 style={{fontSize:20,fontWeight:900,margin:0}}>Mis quizzes</h1>
         </div>
         <div style={{display:'flex',gap:8}}>
           <Link
