@@ -113,10 +113,17 @@ function EditorQuiz() {
 
   async function handleSave() {
     if (!title.trim()) return alert('Poné un título al quiz.')
-    const valid = questions.every(q =>
-      q.type === 'wordcloud' ? q.text.trim() : q.text.trim() && q.options.every(o => o.trim())
+
+    // Encontrar la primera pregunta incompleta y navegar a ella
+    const invalidIdx = questions.findIndex(q =>
+      q.type === 'wordcloud' ? !q.text.trim() : !q.text.trim() || q.options.some(o => !o.trim())
     )
-    if (!valid) return alert('Completá todas las preguntas y opciones.')
+    if (invalidIdx !== -1) {
+      setActive(invalidIdx)
+      alert(`La pregunta ${invalidIdx + 1} está incompleta. Completá el texto y todas las opciones.`)
+      return
+    }
+
     setSaving(true)
     try {
       const teacherId = getTeacherId()
