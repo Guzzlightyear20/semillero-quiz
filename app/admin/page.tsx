@@ -6,13 +6,27 @@ import type { Quiz } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
 
-const ADMIN_ID = 'semillero-admin'
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'semillero2025'
+function getTeacherCodes(): Record<string, string> {
+  try {
+    const raw = process.env.NEXT_PUBLIC_TEACHER_CODES
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  // fallback: single password mode
+  return { [process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'semillero2025']: 'Profe' }
+}
+
+const TEACHER_CODES = getTeacherCodes()
+
+function validateCode(code: string): { id: string; name: string } | null {
+  const name = TEACHER_CODES[code.trim().toUpperCase()] ?? TEACHER_CODES[code.trim()]
+  if (!name) return null
+  return { id: code.trim().toUpperCase(), name }
+}
 
 export default function AdminPage() {
   const router = useRouter()
-  const [authed, setAuthed] = useState(false)
-  const [password, setPassword] = useState('')
+  const [teacher, setTeacher] = useState<{ id: string; name: string } | null>(null)
+  const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,38 +34,46 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
-    const ok = localStorage.getItem('admin_authed') === 'true'
-    setAuthed(ok)
-    if (ok) loadQuizzes()
-    else setLoading(false)
+    const stored = localStorage.getItem('teacher_session')
+    if (stored) {
+      try {
+        const t = JSON.parse(stored)
+        setTeacher(t)
+        loadQuizzes(t.id)
+      } catch {
+        setLoading(false)
+      }
+    } else {
+      setLoading(false)
+    }
   }, [])
 
-  async function loadQuizzes() {
-    const qs = await getQuizzesByHost(ADMIN_ID)
+  async function loadQuizzes(teacherId: string) {
+    const qs = await getQuizzesByHost(teacherId)
     setQuizzes(qs)
     setLoading(false)
   }
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem('admin_authed', 'true')
-      setAuthed(true)
-      loadQuizzes()
-    } else {
-      setError('Contraseña incorrecta.')
-    }
+    const result = validateCode(code)
+    if (!result) return setError('Código incorrecto. Pedíselo a tu coordinador.')
+    localStorage.setItem('teacher_session', JSON.stringify(result))
+    setTeacher(result)
+    loadQuizzes(result.id)
   }
 
   function handleLogout() {
-    localStorage.removeItem('admin_authed')
-    setAuthed(false)
+    localStorage.removeItem('teacher_session')
+    setTeacher(null)
     setQuizzes([])
+    setCode('')
   }
 
   async function handleLaunch(quizId: string) {
+    if (!teacher) return
     setLaunching(quizId)
-    const roomId = await createRoom(quizId, ADMIN_ID)
+    const roomId = await createRoom(quizId, teacher.id)
     router.push(`/host/${roomId}`)
   }
 
@@ -67,23 +89,23 @@ export default function AdminPage() {
     <div className="min-h-screen flex items-center justify-center" style={{color:'var(--sq-muted)'}}>Cargando...</div>
   )
 
-  if (!authed) return (
+  if (!teacher) return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-xs flex flex-col gap-5">
         <div className="text-center flex flex-col items-center">
           <Image src="/logo.png" alt="Semillero Digital" width={180} height={70} style={{objectFit:'contain',marginBottom:16,filter:'brightness(0) invert(1)'}} priority />
           <h1 style={{fontSize:24,fontWeight:900,margin:'0 0 4px'}}>Panel del profe</h1>
-          <p style={{color:'var(--sq-muted)',fontSize:14,margin:0}}>Ingresá tu contraseña para continuar</p>
+          <p style={{color:'var(--sq-muted)',fontSize:14,margin:0}}>Ingresá tu código personal</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-3">
           <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Contraseña"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Tu código"
             autoFocus
+            autoCapitalize="characters"
             className="sq-input"
-            style={{textAlign:'center',fontSize:18,letterSpacing:'0.15em'}}
+            style={{textAlign:'center',fontSize:20,fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase'}}
           />
           {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
           <button type="submit" className="sq-btn-primary">Entrar →</button>
@@ -97,7 +119,10 @@ export default function AdminPage() {
       <div className="sq-admin-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <Image src="/logo.png" alt="Semillero Digital" width={110} height={42} style={{objectFit:'contain',filter:'brightness(0) invert(1)'}} className="sq-admin-header-logo" />
-          <h1 style={{fontSize:20,fontWeight:900,margin:0}}>Mis quizzes</h1>
+          <div>
+            <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Panel de</p>
+            <h1 style={{fontSize:18,fontWeight:900,margin:0}}>{teacher.name}</h1>
+          </div>
         </div>
         <div style={{display:'flex',gap:8,flexShrink:0}}>
           <Link

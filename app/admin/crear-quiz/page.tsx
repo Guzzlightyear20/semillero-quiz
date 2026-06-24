@@ -4,7 +4,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createQuiz, updateQuiz, getQuizById } from '@/lib/rooms'
 import type { Question } from '@/types'
 
-const ADMIN_ID = 'semillero-admin'
+function getTeacherId(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    const s = localStorage.getItem('teacher_session')
+    if (s) return JSON.parse(s).id
+  } catch {}
+  return 'semillero-admin'
+}
 
 const ANS_COLORS = ['#E84530', '#3B82F6', '#F5921E', '#3ECFA3']
 const ANS_BG = ['rgba(232,69,48,.25)', 'rgba(59,130,246,.25)', 'rgba(245,146,30,.25)', 'rgba(62,207,163,.25)']
@@ -34,7 +41,7 @@ function EditorQuiz() {
   const [loading, setLoading] = useState(!!editId)
 
   useEffect(() => {
-    if (localStorage.getItem('admin_authed') !== 'true') router.push('/admin')
+    if (!localStorage.getItem('teacher_session')) router.push('/admin')
   }, [router])
 
   useEffect(() => {
@@ -87,13 +94,16 @@ function EditorQuiz() {
 
   async function handleSave() {
     if (!title.trim()) return alert('Poné un título al quiz.')
-    const valid = questions.every(q => q.text.trim() && q.options.every(o => o.trim()))
+    const valid = questions.every(q =>
+      q.type === 'wordcloud' ? q.text.trim() : q.text.trim() && q.options.every(o => o.trim())
+    )
     if (!valid) return alert('Completá todas las preguntas y opciones.')
     setSaving(true)
+    const teacherId = getTeacherId()
     if (editId) {
       await updateQuiz(editId, title.trim(), questions)
     } else {
-      await createQuiz(title.trim(), questions, ADMIN_ID)
+      await createQuiz(title.trim(), questions, teacherId)
     }
     router.push('/admin')
   }
