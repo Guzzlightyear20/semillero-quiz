@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { subscribeAuth } from '@/lib/auth'
 import { createQuiz } from '@/lib/rooms'
 import type { Question } from '@/types'
-import { User } from 'firebase/auth'
+
+const ADMIN_ID = 'semillero-admin'
 
 const EMPTY_QUESTION: Question = {
   text: '',
@@ -15,16 +15,12 @@ const EMPTY_QUESTION: Question = {
 
 export default function CrearQuizPage() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
   const [title, setTitle] = useState('')
   const [questions, setQuestions] = useState<Question[]>([{ ...EMPTY_QUESTION, options: ['', '', '', ''] }])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    return subscribeAuth((u) => {
-      if (!u) router.push('/admin')
-      else setUser(u)
-    })
+    if (localStorage.getItem('admin_authed') !== 'true') router.push('/admin')
   }, [router])
 
   function updateQuestion(i: number, field: keyof Question, value: unknown) {
@@ -51,11 +47,11 @@ export default function CrearQuizPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!user || !title.trim()) return
+    if (!title.trim()) return
     const valid = questions.every((q) => q.text.trim() && q.options.every((o) => o.trim()))
     if (!valid) return alert('Completá todas las preguntas y opciones.')
     setSaving(true)
-    await createQuiz(title.trim(), questions, user.uid)
+    await createQuiz(title.trim(), questions, ADMIN_ID)
     router.push('/admin')
   }
 
