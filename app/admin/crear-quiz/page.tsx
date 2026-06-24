@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createQuiz, updateQuiz, getQuizById } from '@/lib/rooms'
+import { uploadQuizImage } from '@/lib/storage'
 import type { Question } from '@/types'
 
 function getTeacherId(): string {
@@ -39,6 +40,8 @@ function EditorQuiz() {
   const [active, setActive] = useState(0)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(!!editId)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!localStorage.getItem('teacher_session')) router.push('/admin')
@@ -83,6 +86,21 @@ function EditorQuiz() {
       imageUrl: item.imageUrl,
       timeLimit: item.timeLimit,
     }))
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadQuizImage(file)
+      updateQ('imageUrl', url)
+    } catch {
+      alert('Error al subir la imagen. Intentá de nuevo.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   function removeQuestion(i: number) {
@@ -228,42 +246,69 @@ function EditorQuiz() {
             />
           </div>
 
-          {/* Image URL */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 12, color: 'var(--sq-muted)', fontWeight: 600, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                🖼 Imagen (opcional — pegá una URL)
-              </p>
-              <input
-                value={q.imageUrl ?? ''}
-                onChange={e => updateQ('imageUrl', e.target.value)}
-                placeholder="https://..."
-                style={{
-                  width: '100%', background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)',
-                  borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
-                  outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
-                }}
-              />
-            </div>
-            {q.imageUrl && (
-              <div style={{ flexShrink: 0, position: 'relative' }}>
+          {/* Imagen — URL o upload */}
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--sq-muted)', fontWeight: 600, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+              🖼 Imagen (opcional)
+            </p>
+
+            {q.imageUrl ? (
+              /* Preview de imagen cargada */
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={q.imageUrl}
                   alt="preview"
-                  style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 10, border: '0.5px solid var(--sq-border)' }}
+                  style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 10, border: '0.5px solid var(--sq-border)', flexShrink: 0 }}
                   onError={e => (e.currentTarget.style.display = 'none')}
                 />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: 'var(--sq-muted)', margin: '0 0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {q.imageUrl.startsWith('https://firebasestorage') ? '📁 Imagen subida' : q.imageUrl}
+                  </p>
+                  <button
+                    onClick={() => updateQ('imageUrl', '')}
+                    style={{ background: 'rgba(248,113,113,.15)', border: '0.5px solid rgba(248,113,113,.4)', color: '#F87171', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 8, cursor: 'pointer' }}
+                  >
+                    × Quitar imagen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Sin imagen — mostrar opciones */
+              <div style={{ display: 'flex', gap: 8 }}>
+                {/* Subir archivo */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
                 <button
-                  onClick={() => updateQ('imageUrl', '')}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
                   style={{
-                    position: 'absolute', top: -6, right: -6,
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: '#E84530', border: 'none', color: '#fff',
-                    fontSize: 11, fontWeight: 900, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    flex: 1, background: uploading ? 'rgba(62,207,163,.1)' : 'rgba(62,207,163,.15)',
+                    border: '0.5px solid rgba(62,207,163,.4)', color: 'var(--sq-green)',
+                    fontWeight: 700, fontSize: 13, padding: '10px', borderRadius: 10,
+                    cursor: uploading ? 'not-allowed' : 'pointer'
                   }}
-                >×</button>
+                >
+                  {uploading ? '⏳ Subiendo...' : '📁 Subir imagen'}
+                </button>
+
+                {/* Pegar URL */}
+                <input
+                  value={q.imageUrl ?? ''}
+                  onChange={e => updateQ('imageUrl', e.target.value)}
+                  placeholder="O pegá una URL..."
+                  style={{
+                    flex: 2, background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)',
+                    borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
+                    outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit'
+                  }}
+                />
               </div>
             )}
           </div>

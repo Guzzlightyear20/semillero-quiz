@@ -110,29 +110,37 @@ export default function JugarPage() {
         </div>
       )}
 
-      {/* QUESTION — Quiz (4 opciones, solo shapes) */}
+      {/* QUESTION — Quiz (4 opciones con texto) */}
       {room.status === 'question' && currentQ && qType === 'quiz' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+          {/* Countdown + pregunta */}
+          <div style={{ textAlign: 'center', padding: '12px 16px 8px' }}>
             {countdown !== null && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: '50%', background: countdown <= 5 ? '#E84530' : 'var(--sq-purple)', fontSize: 28, fontWeight: 900, color: '#fff' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, borderRadius: '50%', background: countdown <= 5 ? '#E84530' : 'var(--sq-purple)', fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 10 }}>
                 {countdown}
               </div>
             )}
+            <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{currentQ.text}</h2>
           </div>
+
           {answered !== null ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-              <div style={{ width: 80, height: 80, borderRadius: '50%', background: ANS_COLORS[answered], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>{ANS_SHAPES[answered]}</div>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: ANS_COLORS[answered], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>{ANS_SHAPES[answered]}</div>
               <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>¡Respuesta enviada!</p>
               <p style={{ color: 'var(--sq-muted)', margin: 0, fontSize: 14 }}>Esperando al resto...</p>
             </div>
           ) : (
             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '8px 12px 16px' }}>
-              {currentQ.options.map((_, i) => (
-                <button key={i} onClick={() => handleAnswer(i)} style={{ background: ANS_COLORS[i], border: 'none', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', minHeight: 120 }}
+              {currentQ.options.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleAnswer(i)}
+                  style={{ background: ANS_COLORS[i], border: 'none', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', minHeight: 100, padding: '14px 10px' }}
                   onTouchStart={e => (e.currentTarget.style.transform = 'scale(.93)')}
-                  onTouchEnd={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                  <span style={{ fontSize: 40, color: '#fff', fontWeight: 900 }}>{ANS_SHAPES[i]}</span>
+                  onTouchEnd={e => (e.currentTarget.style.transform = 'scale(1)')}
+                >
+                  <span style={{ fontSize: 26, color: '#fff', fontWeight: 900 }}>{ANS_SHAPES[i]}</span>
+                  <span style={{ fontSize: 13, color: '#fff', fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>{opt}</span>
                 </button>
               ))}
             </div>
