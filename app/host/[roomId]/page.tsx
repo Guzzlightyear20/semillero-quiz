@@ -1,15 +1,15 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { subscribeRoom, subscribePlayers, advanceToQuestion, showAnswers, showLeaderboard, finishRoom } from '@/lib/rooms'
-import { getQuizzesByHost } from '@/lib/rooms'
-import { subscribeAuth } from '@/lib/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Player, Quiz } from '@/types'
 
-const OPTION_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500']
-const OPTION_LABELS = ['A', 'B', 'C', 'D']
+const ANS_COLORS = ['#E84530','#3B82F6','#F5921E','#3ECFA3']
+const ANS_BG = ['rgba(232,69,48,.2)','rgba(59,130,246,.2)','rgba(245,146,30,.2)','rgba(62,207,163,.2)']
+const ANS_BORDER = ['rgba(232,69,48,.5)','rgba(59,130,246,.5)','rgba(245,146,30,.5)','rgba(62,207,163,.5)']
+const ANS_LABELS = ['A','B','C','D']
 
 export default function HostPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -20,9 +20,9 @@ export default function HostPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
 
   useEffect(() => {
-    const unsub1 = subscribeRoom(roomId, setRoom)
-    const unsub2 = subscribePlayers(roomId, setPlayers)
-    return () => { unsub1(); unsub2() }
+    const u1 = subscribeRoom(roomId, setRoom)
+    const u2 = subscribePlayers(roomId, setPlayers)
+    return () => { u1(); u2() }
   }, [roomId])
 
   useEffect(() => {
@@ -38,128 +38,122 @@ export default function HostPage() {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - room.questionStartedAt!) / 1000)
       const remaining = q.timeLimit - elapsed
-      if (remaining <= 0) {
-        clearInterval(interval)
-        setCountdown(0)
-        handleShowAnswers()
-      } else {
-        setCountdown(remaining)
-      }
+      if (remaining <= 0) { clearInterval(interval); setCountdown(0); handleShowAnswers() }
+      else setCountdown(remaining)
     }, 500)
     return () => clearInterval(interval)
   }, [room?.status, room?.questionStartedAt, room?.currentQuestion])
 
   async function handleShowAnswers() {
     if (!room || !quiz) return
-    const q = quiz.questions[room.currentQuestion]
-    await showAnswers(roomId, q.correctIndex, players)
+    await showAnswers(roomId, quiz.questions[room.currentQuestion].correctIndex, players)
   }
 
   async function handleNext() {
     if (!room || !quiz) return
     const isLast = room.currentQuestion >= quiz.questions.length - 1
-    if (room.status === 'answer') {
-      await showLeaderboard(roomId)
-    } else if (room.status === 'leaderboard') {
-      if (isLast) {
-        await finishRoom(roomId)
-      } else {
-        await advanceToQuestion(roomId, room.currentQuestion + 1)
-        setCountdown(null)
-      }
+    if (room.status === 'answer') await showLeaderboard(roomId)
+    else if (room.status === 'leaderboard') {
+      if (isLast) await finishRoom(roomId)
+      else { await advanceToQuestion(roomId, room.currentQuestion + 1); setCountdown(null) }
     }
-  }
-
-  async function handleStart() {
-    await advanceToQuestion(roomId, 0)
   }
 
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
-  if (!room || !quiz) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando sala...</div>
-  }
+  if (!room || !quiz) return (
+    <div className="min-h-screen flex items-center justify-center" style={{color:'var(--sq-muted)'}}>Cargando sala...</div>
+  )
 
   const currentQ = quiz.questions[room.currentQuestion]
 
   return (
-    <main className="min-h-screen flex flex-col p-6 max-w-4xl mx-auto">
+    <main className="min-h-screen flex flex-col p-6" style={{maxWidth:900,margin:'0 auto'}}>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div>
-          <h1 className="text-xl font-black">{quiz.title}</h1>
-          <p className="text-gray-400 text-sm">{players.length} jugadores conectados</p>
+          <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 3px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>Quiz activo</p>
+          <h1 style={{fontSize:18,fontWeight:800,margin:0}}>{quiz.title}</h1>
+          <p style={{fontSize:13,color:'var(--sq-muted)',margin:'2px 0 0'}}>{players.length} jugadores conectados</p>
         </div>
-        <div className="bg-gray-800 px-4 py-2 rounded-xl text-center">
-          <p className="text-xs text-gray-400">Código</p>
-          <p className="font-mono font-black text-2xl tracking-widest text-violet-400">{room.code}</p>
+        <div className="sq-card" style={{padding:'8px 18px',textAlign:'center'}}>
+          <p style={{fontSize:10,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}}>Código</p>
+          <p style={{fontFamily:'monospace',fontWeight:900,fontSize:26,letterSpacing:'.15em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
         </div>
       </div>
 
-      {/* Sala de espera */}
+      {/* WAITING */}
       {room.status === 'waiting' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-8">
-          <div className="text-center">
-            <p className="text-gray-400 mb-2">Los alumnos entran en</p>
-            <p className="text-2xl font-bold text-white break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/unirse</p>
-            <p className="text-gray-400 mt-1">con el código:</p>
-            <p className="font-mono font-black text-6xl tracking-widest text-violet-400 mt-2">{room.code}</p>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:24}}>
+          <div className="sq-card" style={{padding:'20px 32px',textAlign:'center'}}>
+            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 6px'}}>Los alumnos entran en</p>
+            <p style={{fontSize:18,fontWeight:700,color:'var(--sq-blue)',margin:0}}>
+              {typeof window !== 'undefined' ? window.location.origin : ''}/unirse
+            </p>
+            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'12px 0 6px'}}>con el código</p>
+            <p style={{fontFamily:'monospace',fontWeight:900,fontSize:52,letterSpacing:'.2em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
           </div>
 
           {players.length > 0 && (
-            <div className="flex flex-wrap gap-3 justify-center max-w-lg">
-              {players.map((p) => (
-                <div key={p.id} className="bg-gray-800 rounded-full px-4 py-2 flex items-center gap-2">
-                  <span>{p.emoji}</span>
-                  <span className="font-medium">{p.name}</span>
-                </div>
-              ))}
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center',maxWidth:500}}>
+              {players.map((p, i) => {
+                const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)']
+                const c = colors[i % 4]
+                return (
+                  <div key={p.id} style={{display:'flex',alignItems:'center',gap:6,background:`${c}18`,border:`0.5px solid ${c}44`,borderRadius:99,padding:'6px 14px'}}>
+                    <span style={{fontSize:16}}>{p.emoji}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:c}}>{p.name}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
 
           <button
-            onClick={handleStart}
+            onClick={() => advanceToQuestion(roomId, 0)}
             disabled={players.length === 0}
-            className="bg-green-600 hover:bg-green-500 disabled:opacity-40 transition-colors font-black text-2xl px-12 py-5 rounded-2xl"
+            className="sq-btn-primary"
+            style={{width:'auto',padding:'14px 40px',fontSize:18}}
           >
             ▶ Empezar ({players.length} listos)
           </button>
         </div>
       )}
 
-      {/* Pregunta activa */}
+      {/* QUESTION */}
       {room.status === 'question' && currentQ && (
-        <div className="flex-1 flex flex-col gap-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <span className="text-gray-400 text-sm">Pregunta {room.currentQuestion + 1} de {quiz.questions.length}</span>
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
+          <div style={{textAlign:'center'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginBottom:12}}>
+              <span style={{fontSize:13,color:'var(--sq-muted)',fontWeight:600}}>Pregunta {room.currentQuestion+1} de {quiz.questions.length}</span>
               {countdown !== null && (
-                <span className={`font-black text-3xl ${countdown <= 5 ? 'text-red-400' : 'text-white'}`}>
-                  ⏱ {countdown}s
-                </span>
+                <span style={{fontSize:36,fontWeight:900,color:countdown<=5?'#F87171':'var(--sq-orange)'}}>{countdown}s</span>
               )}
             </div>
-            <h2 className="text-3xl font-black">{currentQ.text}</h2>
+            <div className="sq-card" style={{padding:'20px 24px'}}>
+              <h2 style={{fontSize:24,fontWeight:800,margin:0}}>{currentQ.text}</h2>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 flex-1">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1}}>
             {currentQ.options.map((opt, i) => (
-              <div key={i} className={`${OPTION_COLORS[i]} rounded-2xl p-6 flex items-center gap-4`}>
-                <span className="font-black text-2xl w-10 h-10 bg-black/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  {OPTION_LABELS[i]}
+              <div key={i} style={{background:ANS_BG[i],border:`1.5px solid ${ANS_BORDER[i]}`,borderRadius:16,padding:'20px 16px',display:'flex',alignItems:'center',gap:12}}>
+                <span style={{width:36,height:36,borderRadius:10,background:ANS_COLORS[i],color:'#fff',fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {ANS_LABELS[i]}
                 </span>
-                <span className="font-bold text-xl">{opt}</span>
+                <span style={{fontWeight:700,fontSize:16,color:'#fff'}}>{opt}</span>
               </div>
             ))}
           </div>
 
-          <div className="flex justify-between items-center">
-            <p className="text-gray-400 text-sm">
-              {players.filter((p) => p.lastAnswer).length} / {players.length} respondieron
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <p style={{fontSize:13,color:'var(--sq-muted)',margin:0}}>
+              {players.filter(p=>p.lastAnswer).length} / {players.length} respondieron
             </p>
             <button
               onClick={handleShowAnswers}
-              className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-6 py-3 rounded-xl transition-colors"
+              style={{background:'var(--sq-orange)',color:'#fff',fontWeight:700,fontSize:14,padding:'10px 20px',borderRadius:10,border:'none',cursor:'pointer'}}
             >
               Ver respuestas →
             </button>
@@ -167,95 +161,88 @@ export default function HostPage() {
         </div>
       )}
 
-      {/* Respuestas reveladas */}
+      {/* ANSWER */}
       {room.status === 'answer' && currentQ && (
-        <div className="flex-1 flex flex-col gap-6">
-          <h2 className="text-2xl font-black text-center">{currentQ.text}</h2>
-          <div className="grid grid-cols-2 gap-4">
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
+          <div className="sq-card" style={{padding:'16px 20px',textAlign:'center'}}>
+            <h2 style={{fontSize:20,fontWeight:800,margin:0}}>{currentQ.text}</h2>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             {currentQ.options.map((opt, i) => (
-              <div
-                key={i}
-                className={`${OPTION_COLORS[i]} rounded-2xl p-5 flex items-center gap-3 transition-opacity ${
-                  i !== currentQ.correctIndex ? 'opacity-40' : 'ring-4 ring-white'
-                }`}
-              >
-                <span className="font-black text-xl w-9 h-9 bg-black/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  {OPTION_LABELS[i]}
+              <div key={i} style={{
+                background: i===currentQ.correctIndex ? ANS_BG[i] : 'rgba(255,255,255,.04)',
+                border: `1.5px solid ${i===currentQ.correctIndex ? ANS_COLORS[i] : 'rgba(255,255,255,.1)'}`,
+                borderRadius:16,padding:'16px',display:'flex',alignItems:'center',gap:10,
+                opacity: i===currentQ.correctIndex ? 1 : 0.4
+              }}>
+                <span style={{width:32,height:32,borderRadius:8,background:i===currentQ.correctIndex?ANS_COLORS[i]:'rgba(255,255,255,.1)',color:'#fff',fontWeight:900,fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {ANS_LABELS[i]}
                 </span>
-                <span className="font-bold text-lg">{opt}</span>
-                {i === currentQ.correctIndex && <span className="ml-auto text-2xl">✓</span>}
+                <span style={{fontWeight:700,fontSize:15,color:'#fff'}}>{opt}</span>
+                {i===currentQ.correctIndex && <span style={{marginLeft:'auto',fontSize:20}}>✓</span>}
               </div>
             ))}
           </div>
-
-          <div className="bg-gray-800 rounded-2xl p-4">
-            <p className="text-gray-400 text-sm mb-3">Resultados de esta pregunta</p>
-            <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-              {sortedPlayers.map((p) => (
-                <div key={p.id} className="flex items-center gap-3">
+          <div className="sq-card" style={{padding:16}}>
+            <p style={{fontSize:12,color:'var(--sq-muted)',margin:'0 0 10px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Resultados</p>
+            <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:160,overflowY:'auto'}}>
+              {sortedPlayers.map(p => (
+                <div key={p.id} style={{display:'flex',alignItems:'center',gap:10}}>
                   <span>{p.emoji}</span>
-                  <span className="flex-1 font-medium">{p.name}</span>
+                  <span style={{flex:1,fontWeight:600,fontSize:14}}>{p.name}</span>
                   {p.lastAnswer && (
-                    <span className={p.lastAnswer.correct ? 'text-green-400 font-bold' : 'text-red-400'}>
-                      {p.lastAnswer.correct ? `+${p.lastAnswer.points}` : '✗'}
+                    <span style={{fontWeight:700,color:p.lastAnswer.correct?'var(--sq-green)':'#F87171',fontSize:13}}>
+                      {p.lastAnswer.correct?`+${p.lastAnswer.points}`:'✗'}
                     </span>
                   )}
-                  <span className="text-gray-400 text-sm w-16 text-right">{p.score} pts</span>
+                  <span style={{color:'var(--sq-muted)',fontSize:13,minWidth:55,textAlign:'right'}}>{p.score} pts</span>
                 </div>
               ))}
             </div>
           </div>
-
-          <button
-            onClick={handleNext}
-            className="bg-violet-600 hover:bg-violet-500 transition-colors font-bold text-lg py-4 rounded-xl"
-          >
-            Ver ranking →
-          </button>
+          <button onClick={handleNext} className="sq-btn-primary">Ver ranking →</button>
         </div>
       )}
 
-      {/* Leaderboard */}
+      {/* LEADERBOARD / FINISHED */}
       {(room.status === 'leaderboard' || room.status === 'finished') && (
-        <div className="flex-1 flex flex-col gap-6">
-          <h2 className="text-3xl font-black text-center">
-            {room.status === 'finished' ? '🏆 Resultado final' : '📊 Ranking'}
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:14}}>
+          <h2 style={{fontSize:26,fontWeight:900,textAlign:'center',margin:0}}>
+            {room.status==='finished' ? '🏆 Resultado final' : '📊 Ranking'}
           </h2>
-          <div className="flex flex-col gap-3">
-            {sortedPlayers.slice(0, 10).map((p, i) => (
-              <div
-                key={p.id}
-                className={`flex items-center gap-4 rounded-2xl px-5 py-4 ${
-                  i === 0 ? 'bg-yellow-500 text-black' :
-                  i === 1 ? 'bg-gray-400 text-black' :
-                  i === 2 ? 'bg-orange-600' : 'bg-gray-800'
-                }`}
-              >
-                <span className="font-black text-2xl w-8 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
-                <span className="text-2xl">{p.emoji}</span>
-                <span className="font-bold text-lg flex-1">{p.name}</span>
-                <span className="font-black text-xl">{p.score} pts</span>
-              </div>
-            ))}
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {sortedPlayers.slice(0,10).map((p, i) => {
+              const medals = ['🥇','🥈','🥉']
+              const bgs = ['rgba(245,158,11,.2)','rgba(156,163,175,.2)','rgba(234,88,12,.2)']
+              const borders = ['rgba(245,158,11,.5)','rgba(156,163,175,.5)','rgba(234,88,12,.5)']
+              return (
+                <div key={p.id} style={{
+                  background: i<3 ? bgs[i] : 'var(--sq-subtle)',
+                  border: `0.5px solid ${i<3 ? borders[i] : 'var(--sq-border)'}`,
+                  borderRadius:14,padding:'12px 18px',
+                  display:'flex',alignItems:'center',gap:14
+                }}>
+                  <span style={{fontSize:22,width:32,textAlign:'center'}}>{i<3?medals[i]:i+1}</span>
+                  <span style={{fontSize:22}}>{p.emoji}</span>
+                  <span style={{fontWeight:700,fontSize:16,flex:1}}>{p.name}</span>
+                  <span style={{fontWeight:900,fontSize:18,color:'var(--sq-green)'}}>{p.score} pts</span>
+                </div>
+              )
+            })}
           </div>
-
-          {room.status === 'leaderboard' && (
-            <button
-              onClick={handleNext}
-              className="bg-violet-600 hover:bg-violet-500 transition-colors font-bold text-lg py-4 rounded-xl"
-            >
-              {room.currentQuestion >= quiz.questions.length - 1 ? '🏁 Finalizar' : 'Siguiente pregunta →'}
+          {room.status==='leaderboard' && (
+            <button onClick={handleNext} className="sq-btn-primary">
+              {room.currentQuestion>=quiz.questions.length-1 ? '🏁 Finalizar' : 'Siguiente pregunta →'}
             </button>
           )}
-
-          {room.status === 'finished' && (
+          {room.status==='finished' && (
             <button
               onClick={async () => {
                 const { createRoom } = await import('@/lib/rooms')
                 const newRoomId = await createRoom(room.quizId, room.hostId)
                 router.push(`/host/${newRoomId}`)
               }}
-              className="bg-green-600 hover:bg-green-500 transition-colors font-bold text-lg py-4 rounded-xl"
+              style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-text)',fontWeight:700,fontSize:15,padding:'14px',borderRadius:14,cursor:'pointer',width:'100%'}}
             >
               🔄 Nueva partida
             </button>

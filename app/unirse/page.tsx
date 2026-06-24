@@ -39,58 +39,77 @@ export default function UnirsePage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-xs">
+
         {step === 'code' ? (
           <form onSubmit={handleCode} className="flex flex-col gap-4">
-            <h1 className="text-3xl font-black text-center mb-2">Ingresá el código</h1>
+            <div className="text-center mb-2">
+              <div className="sq-chip mb-4" style={{display:'inline-flex',color:'var(--sq-blue)'}}>
+                <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-blue)',display:'inline-block'}}/>
+                Unirse a partida
+              </div>
+              <h1 style={{fontSize:28,fontWeight:900,margin:0}}>Ingresá el código</h1>
+            </div>
+
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="ABC123"
               maxLength={6}
-              className="bg-gray-800 rounded-xl px-4 py-4 text-3xl font-mono tracking-widest text-center uppercase outline-none focus:ring-2 focus:ring-violet-500"
+              className="sq-input"
+              style={{fontSize:32,fontWeight:900,textAlign:'center',letterSpacing:'0.2em',fontFamily:'monospace'}}
             />
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || code.length < 4}
-              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 transition-colors font-bold text-lg py-4 rounded-xl"
-            >
+
+            {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
+
+            <button type="submit" disabled={loading || code.length < 4} className="sq-btn-primary">
               {loading ? 'Buscando...' : 'Entrar →'}
             </button>
           </form>
+
         ) : (
           <form onSubmit={handleJoin} className="flex flex-col gap-5">
-            <h1 className="text-3xl font-black text-center mb-2">¿Cómo te llamás?</h1>
+            <div className="text-center mb-2">
+              <h1 style={{fontSize:28,fontWeight:900,margin:0}}>¿Cómo te llamás?</h1>
+            </div>
+
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Tu nombre"
               maxLength={20}
               autoFocus
-              className="bg-gray-800 rounded-xl px-4 py-4 text-xl text-center outline-none focus:ring-2 focus:ring-violet-500"
+              className="sq-input"
+              style={{textAlign:'center',fontSize:20,fontWeight:700}}
             />
+
             <div>
-              <p className="text-gray-400 text-sm mb-2 text-center">Elegí tu emoji</p>
-              <div className="grid grid-cols-6 gap-2">
+              <p style={{fontSize:12,color:'var(--sq-muted)',textAlign:'center',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Elegí tu emoji</p>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8}}>
                 {EMOJIS.map((e) => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => setEmoji(e)}
-                    className={`text-2xl p-2 rounded-xl transition-colors ${emoji === e ? 'bg-violet-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+                    style={{
+                      fontSize:22,
+                      padding:'8px 4px',
+                      borderRadius:12,
+                      border: emoji === e ? '1.5px solid var(--sq-green)' : '0.5px solid var(--sq-border)',
+                      background: emoji === e ? 'rgba(62,207,163,.15)' : 'var(--sq-subtle)',
+                      cursor:'pointer',
+                      transition:'all .1s'
+                    }}
                   >
                     {e}
                   </button>
                 ))}
               </div>
             </div>
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 transition-colors font-bold text-lg py-4 rounded-xl"
-            >
+
+            {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
+
+            <button type="submit" disabled={loading} className="sq-btn-primary">
               {loading ? 'Entrando...' : `${emoji} ¡Jugar!`}
             </button>
           </form>

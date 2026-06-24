@@ -53,52 +53,58 @@ export default function AdminPage() {
     router.push(`/host/${roomId}`)
   }
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Cargando...</div>
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{color:'var(--sq-muted)'}}>Cargando...</div>
+  )
 
-  if (!authed) {
-    return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
+  if (!authed) return (
+    <main className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-xs flex flex-col gap-5">
         <div className="text-center">
-          <div className="text-5xl mb-3">👨‍🏫</div>
-          <h1 className="text-3xl font-black mb-1">Panel del profe</h1>
+          <div className="sq-chip mb-4" style={{display:'inline-flex',color:'var(--sq-orange)'}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-orange)',display:'inline-block'}}/>
+            Panel del profe
+          </div>
+          <h1 style={{fontSize:30,fontWeight:900,margin:0}}>Bienvenido</h1>
+          <p style={{color:'var(--sq-muted)',fontSize:14,marginTop:6}}>Ingresá tu contraseña para continuar</p>
         </div>
-        <form onSubmit={handleLogin} className="flex flex-col gap-3 w-full max-w-xs">
+        <form onSubmit={handleLogin} className="flex flex-col gap-3">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Contraseña"
             autoFocus
-            className="bg-gray-800 rounded-xl px-4 py-4 text-lg text-center outline-none focus:ring-2 focus:ring-violet-500"
+            className="sq-input"
+            style={{textAlign:'center',fontSize:18,letterSpacing:'0.15em'}}
           />
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-          <button
-            type="submit"
-            className="bg-violet-600 hover:bg-violet-500 transition-colors font-bold text-lg py-4 rounded-xl"
-          >
-            Entrar →
-          </button>
+          {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
+          <button type="submit" className="sq-btn-primary">Entrar →</button>
         </form>
-      </main>
-    )
-  }
+      </div>
+    </main>
+  )
 
   return (
-    <main className="min-h-screen px-4 py-8 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-black">Mis quizzes</h1>
-        <div className="flex gap-2">
+    <main className="min-h-screen px-4 py-8" style={{maxWidth:600,margin:'0 auto'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:28}}>
+        <div>
+          <div className="sq-chip mb-2" style={{color:'var(--sq-green)'}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:'var(--sq-green)',display:'inline-block'}}/>
+            Semillero Digital
+          </div>
+          <h1 style={{fontSize:24,fontWeight:900,margin:0}}>Mis quizzes</h1>
+        </div>
+        <div style={{display:'flex',gap:8}}>
           <Link
             href="/admin/crear-quiz"
-            className="bg-violet-600 hover:bg-violet-500 transition-colors font-bold px-4 py-2 rounded-xl text-sm"
+            style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:700,fontSize:13,padding:'8px 14px',borderRadius:10,textDecoration:'none',display:'inline-block'}}
           >
-            + Nuevo quiz
+            + Nuevo
           </Link>
           <button
             onClick={handleLogout}
-            className="bg-gray-800 hover:bg-gray-700 transition-colors px-4 py-2 rounded-xl text-sm"
+            style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontSize:13,padding:'8px 14px',borderRadius:10,cursor:'pointer'}}
           >
             Salir
           </button>
@@ -106,25 +112,25 @@ export default function AdminPage() {
       </div>
 
       {quizzes.length === 0 ? (
-        <div className="text-center py-20 text-gray-500">
-          <p className="text-4xl mb-3">📝</p>
-          <p>No tenés quizzes todavía.</p>
-          <Link href="/admin/crear-quiz" className="text-violet-400 hover:underline mt-1 inline-block">
+        <div style={{textAlign:'center',padding:'60px 0',color:'var(--sq-muted)'}}>
+          <p style={{fontSize:40,margin:'0 0 12px'}}>📝</p>
+          <p style={{margin:'0 0 8px'}}>No tenés quizzes todavía.</p>
+          <Link href="/admin/crear-quiz" style={{color:'var(--sq-green)',textDecoration:'none',fontWeight:600}}>
             Creá el primero →
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {quizzes.map((q) => (
-            <div key={q.id} className="bg-gray-800 rounded-2xl p-5 flex items-center justify-between gap-4">
+            <div key={q.id} className="sq-card" style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
               <div>
-                <p className="font-bold text-lg">{q.title}</p>
-                <p className="text-gray-400 text-sm">{q.questions.length} preguntas</p>
+                <p style={{fontWeight:700,fontSize:16,margin:'0 0 3px'}}>{q.title}</p>
+                <p style={{color:'var(--sq-muted)',fontSize:13,margin:0}}>{q.questions.length} preguntas</p>
               </div>
               <button
                 onClick={() => handleLaunch(q.id)}
                 disabled={launching === q.id}
-                className="bg-green-600 hover:bg-green-500 disabled:opacity-40 transition-colors font-bold px-5 py-3 rounded-xl whitespace-nowrap"
+                style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:800,fontSize:14,padding:'10px 18px',borderRadius:10,border:'none',cursor:'pointer',opacity:launching===q.id?.35:1,whiteSpace:'nowrap'}}
               >
                 {launching === q.id ? '...' : '▶ Lanzar'}
               </button>

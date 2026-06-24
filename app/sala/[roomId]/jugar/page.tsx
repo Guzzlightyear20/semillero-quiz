@@ -6,9 +6,10 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Quiz, Player } from '@/types'
 
-const OPTION_COLORS = ['bg-red-500 hover:bg-red-400', 'bg-blue-500 hover:bg-blue-400', 'bg-yellow-500 hover:bg-yellow-400', 'bg-green-500 hover:bg-green-400']
-const OPTION_COLORS_STATIC = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500']
-const OPTION_LABELS = ['A', 'B', 'C', 'D']
+const ANS_COLORS = ['#E84530','#3B82F6','#F5921E','#3ECFA3']
+const ANS_BG = ['rgba(232,69,48,.2)','rgba(59,130,246,.2)','rgba(245,146,30,.2)','rgba(62,207,163,.2)']
+const ANS_BORDER = ['rgba(232,69,48,.5)','rgba(59,130,246,.5)','rgba(245,146,30,.5)','rgba(62,207,163,.5)']
+const ANS_LABELS = ['A','B','C','D']
 
 export default function JugarPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -18,23 +19,9 @@ export default function JugarPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [playerId, setPlayerId] = useState<string | null>(null)
   const [myData, setMyData] = useState<Player | null>(null)
-  const [ranking, setRanking] = useState<number>(0)
+  const [ranking, setRanking] = useState(0)
 
-  useEffect(() => {
-    setPlayerId(localStorage.getItem(`player_${roomId}`))
-  }, [roomId])
-
-  useEffect(() => {
-    if (!playerId) return
-    return subscribePlayers(roomId, (players) => {
-      const sorted = [...players].sort((a, b) => b.score - a.score)
-      const me = players.find((p) => p.id === playerId)
-      if (me) {
-        setMyData(me)
-        setRanking(sorted.findIndex((p) => p.id === playerId) + 1)
-      }
-    })
-  }, [roomId, playerId])
+  useEffect(() => { setPlayerId(localStorage.getItem(`player_${roomId}`)) }, [roomId])
 
   useEffect(() => {
     return subscribeRoom(roomId, (r) => {
@@ -62,73 +49,85 @@ export default function JugarPage() {
     return () => clearInterval(interval)
   }, [room?.status, room?.questionStartedAt, room?.currentQuestion])
 
+  useEffect(() => {
+    if (!playerId) return
+    return subscribePlayers(roomId, (players) => {
+      const sorted = [...players].sort((a, b) => b.score - a.score)
+      const me = players.find((p) => p.id === playerId)
+      if (me) { setMyData(me); setRanking(sorted.findIndex((p) => p.id === playerId) + 1) }
+    })
+  }, [roomId, playerId])
+
   async function handleAnswer(index: number) {
     if (!room || !quiz || answered !== null || !playerId) return
-    const q = quiz.questions[room.currentQuestion]
     setAnswered(index)
-    await submitAnswer(roomId, playerId, index, room.questionStartedAt!, q.timeLimit)
+    await submitAnswer(roomId, playerId, index, room.questionStartedAt!, quiz.questions[room.currentQuestion].timeLimit)
   }
 
-  if (!room || !quiz) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Conectando...</div>
-  }
+  if (!room || !quiz) return (
+    <div className="min-h-screen flex items-center justify-center" style={{color:'var(--sq-muted)'}}>Conectando...</div>
+  )
 
   const currentQ = quiz.questions[room.currentQuestion]
 
   return (
     <main className="min-h-screen flex flex-col p-4">
+
       {/* Score bar */}
       {myData && room.status !== 'waiting' && (
-        <div className="flex items-center justify-between mb-4 bg-gray-800 rounded-xl px-4 py-2">
-          <span className="text-lg">{myData.emoji} <span className="font-bold">{myData.name}</span></span>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm">#{ranking}</span>
-            <span className="font-black text-violet-400 text-lg">{myData.score} pts</span>
+        <div className="sq-card" style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 16px',marginBottom:16}}>
+          <span style={{fontSize:14,fontWeight:700}}>{myData.emoji} {myData.name}</span>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:12,color:'var(--sq-muted)',fontWeight:600}}>#{ranking}</span>
+            <span style={{fontSize:16,fontWeight:900,color:'var(--sq-green)'}}>{myData.score} pts</span>
           </div>
         </div>
       )}
 
-      {/* Sala de espera */}
+      {/* WAITING */}
       {room.status === 'waiting' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="text-5xl animate-bounce">⏳</div>
-          <h1 className="text-2xl font-black">Esperando al profe...</h1>
-          <p className="text-gray-400">La partida arranca en cualquier momento</p>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,textAlign:'center'}}>
+          <div style={{fontSize:52,marginBottom:4}}>⏳</div>
+          <h1 style={{fontSize:24,fontWeight:900,margin:0}}>Esperando al profe...</h1>
+          <p style={{color:'var(--sq-muted)',margin:0,fontSize:14}}>La partida arranca en cualquier momento</p>
         </div>
       )}
 
-      {/* Pregunta activa */}
+      {/* QUESTION */}
       {room.status === 'question' && currentQ && (
-        <div className="flex-1 flex flex-col gap-4">
-          <div className="text-center py-4">
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{textAlign:'center',padding:'8px 0'}}>
             {countdown !== null && (
-              <div className={`text-5xl font-black mb-2 ${countdown <= 5 ? 'text-red-400' : 'text-white'}`}>
-                {countdown}
-              </div>
+              <div style={{fontSize:48,fontWeight:900,color:countdown<=5?'#F87171':'var(--sq-orange)',lineHeight:1,marginBottom:8}}>{countdown}</div>
             )}
-            <h2 className="text-2xl font-black px-2">{currentQ.text}</h2>
+            <h2 style={{fontSize:20,fontWeight:800,margin:0,padding:'0 4px'}}>{currentQ.text}</h2>
           </div>
 
           {answered !== null ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">✅</div>
-                <p className="text-xl font-bold">¡Respuesta enviada!</p>
-                <p className="text-gray-400 mt-1">Esperando al resto...</p>
-              </div>
+            <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:10}}>
+              <div style={{fontSize:56}}>✅</div>
+              <p style={{fontSize:18,fontWeight:800,margin:0}}>¡Respuesta enviada!</p>
+              <p style={{color:'var(--sq-muted)',margin:0,fontSize:14}}>Esperando al resto...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 flex-1">
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,flex:1}}>
               {currentQ.options.map((opt, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(i)}
-                  className={`${OPTION_COLORS[i]} rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-colors active:scale-95 transform`}
+                  style={{
+                    background:ANS_BG[i],
+                    border:`1.5px solid ${ANS_COLORS[i]}`,
+                    borderRadius:16,
+                    padding:'20px 12px',
+                    display:'flex',flexDirection:'column',alignItems:'center',gap:8,
+                    cursor:'pointer',transition:'transform .1s'
+                  }}
+                  onTouchStart={(e) => (e.currentTarget.style.transform='scale(.95)')}
+                  onTouchEnd={(e) => (e.currentTarget.style.transform='scale(1)')}
                 >
-                  <span className="font-black text-2xl w-10 h-10 bg-black/20 rounded-full flex items-center justify-center">
-                    {OPTION_LABELS[i]}
-                  </span>
-                  <span className="font-bold text-sm text-center">{opt}</span>
+                  <span style={{fontSize:24,fontWeight:900,color:ANS_COLORS[i]}}>{ANS_LABELS[i]}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:'rgba(255,255,255,.85)',textAlign:'center',lineHeight:1.3}}>{opt}</span>
                 </button>
               ))}
             </div>
@@ -136,65 +135,70 @@ export default function JugarPage() {
         </div>
       )}
 
-      {/* Respuestas reveladas */}
+      {/* ANSWER */}
       {room.status === 'answer' && currentQ && (
-        <div className="flex-1 flex flex-col gap-4 items-center justify-center text-center">
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,textAlign:'center'}}>
           {answered !== null ? (
             answered === currentQ.correctIndex ? (
-              <div>
-                <div className="text-6xl mb-3">🎉</div>
-                <p className="text-3xl font-black text-green-400">¡Correcto!</p>
-              </div>
+              <>
+                <div style={{fontSize:60}}>🎉</div>
+                <p style={{fontSize:30,fontWeight:900,margin:0,color:'var(--sq-green)'}}>¡Correcto!</p>
+                {myData?.lastAnswer && (
+                  <div className="sq-card" style={{padding:'10px 24px'}}>
+                    <p style={{fontWeight:900,fontSize:24,color:'var(--sq-green)',margin:0}}>+{myData.lastAnswer.points} pts</p>
+                  </div>
+                )}
+              </>
             ) : (
-              <div>
-                <div className="text-6xl mb-3">😬</div>
-                <p className="text-3xl font-black text-red-400">Incorrecto</p>
-                <p className="text-gray-400 mt-2">
-                  Era: <span className="text-white font-bold">{currentQ.options[currentQ.correctIndex]}</span>
+              <>
+                <div style={{fontSize:60}}>😬</div>
+                <p style={{fontSize:30,fontWeight:900,margin:0,color:'#F87171'}}>Incorrecto</p>
+                <p style={{color:'var(--sq-muted)',margin:0,fontSize:14}}>
+                  Era: <span style={{color:'#fff',fontWeight:700}}>{currentQ.options[currentQ.correctIndex]}</span>
                 </p>
-              </div>
+              </>
             )
           ) : (
-            <div>
-              <div className="text-6xl mb-3">⌛</div>
-              <p className="text-2xl font-black text-gray-400">Se acabó el tiempo</p>
-              <p className="text-gray-400 mt-2">
-                Era: <span className="text-white font-bold">{currentQ.options[currentQ.correctIndex]}</span>
+            <>
+              <div style={{fontSize:60}}>⌛</div>
+              <p style={{fontSize:24,fontWeight:900,margin:0,color:'var(--sq-muted)'}}>Se acabó el tiempo</p>
+              <p style={{color:'var(--sq-muted)',margin:0,fontSize:14}}>
+                Era: <span style={{color:'#fff',fontWeight:700}}>{currentQ.options[currentQ.correctIndex]}</span>
               </p>
-            </div>
+            </>
           )}
-          <p className="text-gray-400 text-sm mt-4">Esperando al profe...</p>
+          <p style={{color:'var(--sq-muted)',fontSize:13,marginTop:8}}>Esperando al profe...</p>
         </div>
       )}
 
-      {/* Leaderboard */}
+      {/* LEADERBOARD */}
       {room.status === 'leaderboard' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="text-5xl">📊</div>
-          <h2 className="text-2xl font-black">Ranking en vivo</h2>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,textAlign:'center'}}>
+          <div style={{fontSize:48}}>📊</div>
+          <h2 style={{fontSize:24,fontWeight:900,margin:0}}>Ranking en vivo</h2>
           {myData && (
-            <div className="bg-gray-800 rounded-2xl px-8 py-4 mt-2">
-              <p className="text-gray-400 text-sm mb-1">Tu posición</p>
-              <p className="font-black text-5xl text-violet-400">#{ranking}</p>
-              <p className="font-black text-2xl mt-1">{myData.score} pts</p>
+            <div className="sq-card" style={{padding:'16px 32px',marginTop:8}}>
+              <p style={{color:'var(--sq-muted)',fontSize:12,margin:'0 0 4px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Tu posición</p>
+              <p style={{fontWeight:900,fontSize:48,color:'var(--sq-green)',margin:'0 0 2px',lineHeight:1}}>#{ranking}</p>
+              <p style={{fontWeight:800,fontSize:20,margin:0}}>{myData.score} pts</p>
             </div>
           )}
-          <p className="text-gray-400 text-sm">El profe está mostrando los resultados</p>
+          <p style={{color:'var(--sq-muted)',fontSize:13}}>El profe está mostrando los resultados</p>
         </div>
       )}
 
-      {/* Final */}
+      {/* FINISHED */}
       {room.status === 'finished' && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="text-6xl">{ranking === 1 ? '🏆' : ranking === 2 ? '🥈' : ranking === 3 ? '🥉' : '🎉'}</div>
-          <h2 className="text-3xl font-black">¡Partida terminada!</h2>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14,textAlign:'center'}}>
+          <div style={{fontSize:60}}>{ranking===1?'🏆':ranking===2?'🥈':ranking===3?'🥉':'🎉'}</div>
+          <h2 style={{fontSize:28,fontWeight:900,margin:0}}>¡Partida terminada!</h2>
           {myData && (
-            <div className="bg-gray-800 rounded-2xl px-8 py-4">
-              <p className="font-black text-4xl text-violet-400">#{ranking}</p>
-              <p className="text-gray-400 mt-1">{myData.score} pts finales</p>
+            <div className="sq-card" style={{padding:'16px 32px'}}>
+              <p style={{fontWeight:900,fontSize:44,color:'var(--sq-green)',margin:'0 0 2px',lineHeight:1}}>#{ranking}</p>
+              <p style={{color:'var(--sq-muted)',margin:0,fontSize:14}}>{myData.score} pts finales</p>
             </div>
           )}
-          <p className="text-gray-400">¡Buen juego!</p>
+          <p style={{color:'var(--sq-muted)',fontSize:14}}>¡Buen juego!</p>
         </div>
       )}
     </main>
