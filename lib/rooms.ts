@@ -65,21 +65,21 @@ export async function getQuizzesByHost(hostId: string): Promise<Quiz[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Quiz))
 }
 
-export async function createRoom(quizId: string, hostId: string): Promise<string> {
+export async function createRoom(quizId: string, hostId: string, teams?: string[]): Promise<string> {
   let code = generateCode()
 
   const existing = await getDocs(query(collection(db, 'rooms'), where('code', '==', code)))
   if (!existing.empty) code = generateCode()
 
-  const ref = await addDoc(collection(db, 'rooms'), {
-    quizId,
-    code,
-    status: 'waiting',
-    currentQuestion: 0,
-    questionStartedAt: null,
-    hostId,
-  })
-  return ref.id
+  const data: Record<string, unknown> = {
+    quizId, code, status: 'waiting',
+    currentQuestion: 0, questionStartedAt: null, hostId,
+    teamsMode: !!(teams && teams.length > 0),
+    teams: teams ?? [],
+  }
+
+  const roomRef = await addDoc(collection(db, 'rooms'), data)
+  return roomRef.id
 }
 
 export async function getRoomByCode(code: string): Promise<{ id: string; data: Room } | null> {
@@ -95,6 +95,7 @@ export async function joinRoom(roomId: string, player: Omit<Player, 'score' | 'l
     name: player.name,
     emoji: player.emoji,
     score: 0,
+    ...(player.team ? { team: player.team } : {}),
   })
 }
 

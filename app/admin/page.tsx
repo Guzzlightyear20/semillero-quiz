@@ -23,6 +23,13 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [teamModal, setTeamModal] = useState<{ quizId: string } | null>(null)
+  const [teamsMode, setTeamsMode] = useState(false)
+  const [teamNames, setTeamNames] = useState(['', '', ''])
+
+  function addTeam() { setTeamNames(t => [...t, '']) }
+  function removeTeam(i: number) { setTeamNames(t => t.filter((_, idx) => idx !== i)) }
+  function updateTeam(i: number, v: string) { setTeamNames(t => t.map((x, idx) => idx === i ? v : x)) }
 
   useEffect(() => {
     const stored = localStorage.getItem('teacher_session')
@@ -74,10 +81,18 @@ export default function AdminPage() {
     setCode('')
   }
 
-  async function handleLaunch(quizId: string) {
-    if (!teacher) return
-    setLaunching(quizId)
-    const roomId = await createRoom(quizId, teacher.id)
+  function openLaunch(quizId: string) {
+    setTeamModal({ quizId })
+    setTeamsMode(false)
+    setTeamNames(['', '', ''])
+  }
+
+  async function confirmLaunch() {
+    if (!teacher || !teamModal) return
+    setLaunching(teamModal.quizId)
+    setTeamModal(null)
+    const teams = teamsMode ? teamNames.filter(t => t.trim()) : []
+    const roomId = await createRoom(teamModal.quizId, teacher.id, teams)
     router.push(`/host/${roomId}`)
   }
 
@@ -165,7 +180,7 @@ export default function AdminPage() {
                   <p style={{color:'var(--sq-muted)',fontSize:13,margin:0}}>{q.questions.length} preguntas</p>
                 </div>
                 <button
-                  onClick={() => handleLaunch(q.id)}
+                  onClick={() => openLaunch(q.id)}
                   disabled={!!launching}
                   style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:800,fontSize:14,padding:'10px 18px',borderRadius:10,border:'none',cursor:'pointer',opacity:launching===q.id?.35:1,whiteSpace:'nowrap',flexShrink:0}}
                 >
@@ -189,6 +204,81 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de células */}
+      {teamModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,zIndex:100}}>
+          <div className="sq-card" style={{width:'100%',maxWidth:400,padding:24,display:'flex',flexDirection:'column',gap:16}}>
+            <h2 style={{fontSize:20,fontWeight:900,margin:0}}>Configurar partida</h2>
+
+            {/* Toggle células */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'var(--sq-subtle)',borderRadius:12,padding:'12px 16px'}}>
+              <div>
+                <p style={{fontWeight:700,fontSize:15,margin:'0 0 2px'}}>Modo células</p>
+                <p style={{color:'var(--sq-muted)',fontSize:12,margin:0}}>Los alumnos compiten en equipos</p>
+              </div>
+              <button
+                onClick={() => setTeamsMode(m => !m)}
+                style={{
+                  width:48,height:26,borderRadius:99,border:'none',cursor:'pointer',
+                  background: teamsMode ? 'var(--sq-green)' : 'rgba(255,255,255,.2)',
+                  transition:'background .2s',position:'relative',flexShrink:0
+                }}
+              >
+                <span style={{
+                  position:'absolute',top:3,left: teamsMode ? 25 : 3,
+                  width:20,height:20,borderRadius:'50%',background:'#fff',
+                  transition:'left .2s',display:'block'
+                }}/>
+              </button>
+            </div>
+
+            {/* Nombres de células */}
+            {teamsMode && (
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <p style={{fontSize:12,color:'var(--sq-muted)',fontWeight:600,margin:0,textTransform:'uppercase',letterSpacing:'.05em'}}>Nombre de cada célula</p>
+                {teamNames.map((t, i) => (
+                  <div key={i} style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <input
+                      value={t}
+                      onChange={e => updateTeam(i, e.target.value)}
+                      placeholder={`Célula ${i+1} (ej: 1A)`}
+                      className="sq-input"
+                      style={{fontSize:14,flex:1}}
+                    />
+                    {teamNames.length > 2 && (
+                      <button onClick={() => removeTeam(i)} style={{background:'none',border:'none',color:'#F87171',cursor:'pointer',fontSize:18,padding:'0 4px'}}>×</button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addTeam}
+                  style={{background:'var(--sq-subtle)',border:'0.5px dashed var(--sq-border)',color:'var(--sq-muted)',fontSize:13,padding:'8px',borderRadius:8,cursor:'pointer'}}
+                >
+                  + Agregar célula
+                </button>
+              </div>
+            )}
+
+            <div style={{display:'flex',gap:10}}>
+              <button
+                onClick={() => setTeamModal(null)}
+                style={{flex:1,background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontWeight:600,fontSize:14,padding:'12px',borderRadius:12,cursor:'pointer'}}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmLaunch}
+                disabled={teamsMode && teamNames.filter(t=>t.trim()).length < 2}
+                className="sq-btn-primary"
+                style={{flex:2,fontSize:15}}
+              >
+                ▶ Lanzar partida
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

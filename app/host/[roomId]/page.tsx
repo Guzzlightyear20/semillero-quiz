@@ -70,6 +70,17 @@ export default function HostPage() {
 
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score)
 
+  const teamScores = room?.teamsMode && room.teams?.length
+    ? room.teams.map(name => {
+        const members = players.filter(p => p.team === name)
+        const total = members.reduce((s, p) => s + p.score, 0)
+        const avg = members.length ? Math.round(total / members.length) : 0
+        return { name, avg, total, count: members.length }
+      }).sort((a, b) => b.avg - a.avg)
+    : null
+
+  const TEAM_COLORS = ['#3ECFA3','#F5921E','#5BBDE8','#C084FC','#F87171','#FBBF24']
+
   if (!room || !quiz) return (
     <div className="min-h-screen flex items-center justify-center" style={{color:'var(--sq-muted)'}}>Cargando sala...</div>
   )
@@ -135,7 +146,21 @@ export default function HostPage() {
             </div>
           </div>
 
-          {players.length > 0 && (
+          {/* Modo células: mostrar conteo por equipo */}
+          {room.teamsMode && room.teams?.length ? (
+            <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+              {room.teams.map((t, i) => {
+                const count = players.filter(p => p.team === t).length
+                const c = TEAM_COLORS[i % TEAM_COLORS.length]
+                return (
+                  <div key={t} style={{background:`${c}18`,border:`1.5px solid ${c}`,borderRadius:14,padding:'10px 20px',textAlign:'center',minWidth:90}}>
+                    <p style={{fontWeight:900,fontSize:18,color:c,margin:'0 0 2px'}}>{t}</p>
+                    <p style={{fontSize:12,color:'var(--sq-muted)',margin:0}}>{count} alumno{count!==1?'s':''}</p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : players.length > 0 ? (
             <div style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center',maxWidth:500}}>
               {players.map((p, i) => {
                 const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)']
@@ -148,7 +173,7 @@ export default function HostPage() {
                 )
               })}
             </div>
-          )}
+          ) : null}
 
           <button
             onClick={() => advanceToQuestion(roomId, 0)}
@@ -320,7 +345,30 @@ export default function HostPage() {
             {room.status==='finished' ? '🏆 Resultado final' : '📊 Ranking'}
           </h2>
 
-          {/* PODIO top 3 */}
+          {/* RANKING DE CÉLULAS (si hay modo equipos) */}
+          {teamScores && teamScores.length > 0 && (
+            <div style={{background:'rgba(255,255,255,.04)',border:'0.5px solid var(--sq-border)',borderRadius:16,padding:16}}>
+              <p style={{fontSize:11,color:'var(--sq-muted)',fontWeight:700,margin:'0 0 10px',textTransform:'uppercase',letterSpacing:'.06em'}}>Ranking de células</p>
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {teamScores.map((t, i) => {
+                  const c = TEAM_COLORS[i % TEAM_COLORS.length]
+                  const medals = ['🥇','🥈','🥉']
+                  return (
+                    <div key={t.name} style={{display:'flex',alignItems:'center',gap:12,background:`${c}15`,border:`1px solid ${c}44`,borderRadius:10,padding:'10px 14px'}}>
+                      <span style={{fontSize:20}}>{medals[i] ?? i+1}</span>
+                      <span style={{fontWeight:800,fontSize:18,color:c,flex:1}}>{t.name}</span>
+                      <div style={{textAlign:'right'}}>
+                        <p style={{fontWeight:900,fontSize:16,color:c,margin:0}}>{t.avg} pts promedio</p>
+                        <p style={{fontSize:11,color:'var(--sq-muted)',margin:0}}>{t.count} alumnos · {t.total} total</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* PODIO top 3 individual */}
           {sortedPlayers.length >= 1 && (
             <div className="sq-host-podium" style={{display:'flex',alignItems:'flex-end',justifyContent:'center',gap:12,padding:'0 16px'}}>
               {/* 2do lugar */}

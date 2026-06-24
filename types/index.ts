@@ -22,12 +22,20 @@ export interface Player {
   name: string
   emoji: string
   score: number
+  team?: string
   lastAnswer?: {
     index: number
     correct: boolean
     points: number
     answeredAt: number
   }
+}
+
+export interface TeamScore {
+  name: string
+  avg: number
+  total: number
+  count: number
 }
 
 export type RoomStatus = 'waiting' | 'question' | 'answer' | 'leaderboard' | 'finished'
@@ -40,5 +48,7 @@ export interface Room {
   currentQuestion: number
   questionStartedAt: number | null
   hostId: string
+  teamsMode?: boolean
+  teams?: string[]
   quiz?: Quiz
 }

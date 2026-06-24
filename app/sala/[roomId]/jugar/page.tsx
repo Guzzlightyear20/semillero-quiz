@@ -88,7 +88,14 @@ export default function JugarPage() {
       {/* Score bar */}
       {myData && room.status !== 'waiting' && qType !== 'wordcloud' && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'rgba(255,255,255,.05)', borderBottom: '0.5px solid var(--sq-border)' }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>{myData.emoji} {myData.name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>{myData.emoji} {myData.name}</span>
+            {myData.team && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(62,207,163,.2)', border: '0.5px solid rgba(62,207,163,.5)', color: 'var(--sq-green)', borderRadius: 99, padding: '2px 8px' }}>
+                {myData.team}
+              </span>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: 'var(--sq-muted)', fontWeight: 600 }}>#{ranking}</span>
             <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--sq-green)' }}>{myData.score} pts</span>
