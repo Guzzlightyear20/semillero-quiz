@@ -98,12 +98,41 @@ export default function HostPage() {
       {room.status === 'waiting' && (
         <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:24}}>
           <div className="sq-card" style={{padding:'20px 32px',textAlign:'center'}}>
-            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 6px'}}>Los alumnos entran en</p>
-            <p style={{fontSize:18,fontWeight:700,color:'var(--sq-blue)',margin:0}}>
-              {typeof window !== 'undefined' ? window.location.origin : ''}/unirse
-            </p>
-            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'12px 0 6px'}}>con el código</p>
-            <p style={{fontFamily:'monospace',fontWeight:900,fontSize:52,letterSpacing:'.2em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
+            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 8px'}}>Los alumnos entran en</p>
+
+            {/* URL con botón copiar */}
+            <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 14px',marginBottom:12}}>
+              <p style={{fontSize:16,fontWeight:700,color:'var(--sq-blue)',margin:0}}>
+                {typeof window !== 'undefined' ? window.location.origin : ''}/unirse
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/unirse`)
+                  const btn = document.getElementById('copy-url-btn')
+                  if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
+                }}
+                id="copy-url-btn"
+                title="Copiar URL"
+                style={{background:'rgba(91,189,232,.2)',border:'0.5px solid rgba(91,189,232,.4)',color:'var(--sq-blue)',fontWeight:700,fontSize:13,padding:'4px 10px',borderRadius:6,cursor:'pointer',flexShrink:0}}
+              >⧉</button>
+            </div>
+
+            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 8px'}}>con el código</p>
+
+            {/* Código con botón copiar */}
+            <div style={{display:'inline-flex',alignItems:'center',gap:12}}>
+              <p style={{fontFamily:'monospace',fontWeight:900,fontSize:52,letterSpacing:'.2em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(room.code)
+                  const btn = document.getElementById('copy-code-btn')
+                  if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
+                }}
+                id="copy-code-btn"
+                title="Copiar código"
+                style={{background:'rgba(62,207,163,.2)',border:'0.5px solid rgba(62,207,163,.4)',color:'var(--sq-green)',fontWeight:700,fontSize:16,padding:'8px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
+              >⧉</button>
+            </div>
           </div>
 
           {players.length > 0 && (
