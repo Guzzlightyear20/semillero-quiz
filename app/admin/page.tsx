@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getQuizzesByHost, createRoom } from '@/lib/rooms'
+import { getQuizzesByHost, createRoom, deleteQuiz } from '@/lib/rooms'
 import type { Quiz } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
   const [launching, setLaunching] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
     const ok = localStorage.getItem('admin_authed') === 'true'
@@ -52,6 +53,14 @@ export default function AdminPage() {
     setLaunching(quizId)
     const roomId = await createRoom(quizId, ADMIN_ID)
     router.push(`/host/${roomId}`)
+  }
+
+  async function handleDelete(quizId: string, title: string) {
+    if (!confirm(`¿Eliminás "${title}"? Esta acción no se puede deshacer.`)) return
+    setDeleting(quizId)
+    await deleteQuiz(quizId)
+    setQuizzes(qs => qs.filter(q => q.id !== quizId))
+    setDeleting(null)
   }
 
   if (loading) return (
@@ -118,18 +127,35 @@ export default function AdminPage() {
       ) : (
         <div style={{display:'flex',flexDirection:'column',gap:10}}>
           {quizzes.map((q) => (
-            <div key={q.id} className="sq-card" style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-              <div>
-                <p style={{fontWeight:700,fontSize:16,margin:'0 0 3px'}}>{q.title}</p>
-                <p style={{color:'var(--sq-muted)',fontSize:13,margin:0}}>{q.questions.length} preguntas</p>
+            <div key={q.id} className="sq-card" style={{padding:'16px 20px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <p style={{fontWeight:700,fontSize:16,margin:'0 0 3px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.title}</p>
+                  <p style={{color:'var(--sq-muted)',fontSize:13,margin:0}}>{q.questions.length} preguntas</p>
+                </div>
+                <button
+                  onClick={() => handleLaunch(q.id)}
+                  disabled={!!launching}
+                  style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:800,fontSize:14,padding:'10px 18px',borderRadius:10,border:'none',cursor:'pointer',opacity:launching===q.id?.35:1,whiteSpace:'nowrap',flexShrink:0}}
+                >
+                  {launching === q.id ? '...' : '▶ Lanzar'}
+                </button>
               </div>
-              <button
-                onClick={() => handleLaunch(q.id)}
-                disabled={launching === q.id}
-                style={{background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:800,fontSize:14,padding:'10px 18px',borderRadius:10,border:'none',cursor:'pointer',opacity:launching===q.id?.35:1,whiteSpace:'nowrap'}}
-              >
-                {launching === q.id ? '...' : '▶ Lanzar'}
-              </button>
+              <div style={{display:'flex',gap:8,marginTop:12,borderTop:'0.5px solid var(--sq-border)',paddingTop:12}}>
+                <Link
+                  href={`/admin/crear-quiz?id=${q.id}`}
+                  style={{flex:1,textAlign:'center',background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'#fff',fontWeight:600,fontSize:13,padding:'8px',borderRadius:8,textDecoration:'none',display:'block'}}
+                >
+                  ✏️ Editar
+                </Link>
+                <button
+                  onClick={() => handleDelete(q.id, q.title)}
+                  disabled={deleting === q.id}
+                  style={{flex:1,background:'rgba(248,113,113,.1)',border:'0.5px solid rgba(248,113,113,.3)',color:'#F87171',fontWeight:600,fontSize:13,padding:'8px',borderRadius:8,cursor:'pointer'}}
+                >
+                  {deleting === q.id ? '...' : '🗑️ Eliminar'}
+                </button>
+              </div>
             </div>
           ))}
         </div>

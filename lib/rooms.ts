@@ -4,6 +4,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   where,
@@ -32,6 +33,20 @@ export async function createQuiz(
     createdAt: Date.now(),
   })
   return ref.id
+}
+
+export async function getQuizById(quizId: string): Promise<Quiz | null> {
+  const snap = await getDoc(doc(db, 'quizzes', quizId))
+  if (!snap.exists()) return null
+  return { id: snap.id, ...snap.data() } as Quiz
+}
+
+export async function updateQuiz(quizId: string, title: string, questions: Question[]): Promise<void> {
+  await updateDoc(doc(db, 'quizzes', quizId), { title, questions })
+}
+
+export async function deleteQuiz(quizId: string): Promise<void> {
+  await deleteDoc(doc(db, 'quizzes', quizId))
 }
 
 export async function getQuizzesByHost(hostId: string): Promise<Quiz[]> {

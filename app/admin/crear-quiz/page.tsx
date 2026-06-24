@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createQuiz } from '@/lib/rooms'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createQuiz, updateQuiz, getQuizById } from '@/lib/rooms'
 import type { Question } from '@/types'
 
 const ADMIN_ID = 'semillero-admin'
@@ -15,16 +15,30 @@ function emptyQuestion(): Question {
   return { text: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }
 }
 
-export default function CrearQuizPage() {
+function EditorQuiz() {
   const router = useRouter()
+  const params = useSearchParams()
+  const editId = params.get('id')
   const [title, setTitle] = useState('')
   const [questions, setQuestions] = useState<Question[]>([emptyQuestion()])
   const [active, setActive] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(!!editId)
 
   useEffect(() => {
     if (localStorage.getItem('admin_authed') !== 'true') router.push('/admin')
   }, [router])
+
+  useEffect(() => {
+    if (!editId) return
+    getQuizById(editId).then((quiz) => {
+      if (quiz) {
+        setTitle(quiz.title)
+        setQuestions(quiz.questions)
+      }
+      setLoading(false)
+    })
+  }, [editId])
 
   const q = questions[active]
 
@@ -58,9 +72,19 @@ export default function CrearQuizPage() {
     const valid = questions.every(q => q.text.trim() && q.options.every(o => o.trim()))
     if (!valid) return alert('Completá todas las preguntas y opciones.')
     setSaving(true)
-    await createQuiz(title.trim(), questions, ADMIN_ID)
+    if (editId) {
+      await updateQuiz(editId, title.trim(), questions)
+    } else {
+      await createQuiz(title.trim(), questions, ADMIN_ID)
+    }
     router.push('/admin')
   }
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--sq-muted)' }}>
+      Cargando quiz...
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -152,7 +176,7 @@ export default function CrearQuizPage() {
             ← Volver
           </button>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--sq-muted)' }}>
-            Pregunta {active + 1} de {questions.length}
+            {editId ? '✏️ Editando quiz' : 'Pregunta'} {active + 1} de {questions.length}
           </span>
           <button
             onClick={handleSave}
@@ -164,7 +188,7 @@ export default function CrearQuizPage() {
               cursor: saving || !title.trim() ? 'not-allowed' : 'pointer'
             }}
           >
-            {saving ? 'Guardando...' : '💾 Guardar quiz'}
+            {saving ? 'Guardando...' : editId ? '💾 Guardar cambios' : '💾 Guardar quiz'}
           </button>
         </div>
 
@@ -262,5 +286,13 @@ export default function CrearQuizPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function CrearQuizPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--sq-muted)'}}>Cargando...</div>}>
+      <EditorQuiz />
+    </Suspense>
   )
 }
