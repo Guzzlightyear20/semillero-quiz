@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createQuiz, updateQuiz, getQuizById } from '@/lib/rooms'
 import { uploadQuizImage } from '@/lib/storage'
 import type { Question } from '@/types'
+import Image from 'next/image'
 
 function getTeacherId(): string {
   if (typeof window === 'undefined') return ''
@@ -137,7 +138,8 @@ function EditorQuiz() {
 
       {/* SIDEBAR */}
       <aside className="sq-editor-sidebar">
-        <div style={{ padding: '14px 12px', borderBottom: '0.5px solid var(--sq-border)' }}>
+        <div style={{ padding: '12px', borderBottom: '0.5px solid var(--sq-border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Image src="/logo.png" alt="Semillero Digital" width={130} height={50} style={{ objectFit: 'contain', filter: 'none' }} />
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
