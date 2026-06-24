@@ -5,12 +5,11 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   onSnapshot,
   query,
   where,
   getDocs,
-  serverTimestamp,
-  Timestamp,
   addDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -130,17 +129,40 @@ export async function advanceToQuestion(roomId: string, questionIndex: number): 
 }
 
 export async function showAnswers(roomId: string, correctIndex: number, players: Player[]): Promise<void> {
-  const batch = players.map(async (p) => {
-    if (!p.lastAnswer) return
-    const correct = p.lastAnswer.index === correctIndex
-    const points = correct ? (p.lastAnswer as any).pendingPoints ?? 0 : 0
-    await updateDoc(doc(db, 'rooms', roomId, 'players', p.id), {
-      score: (p.score ?? 0) + points,
-      lastAnswer: { ...p.lastAnswer, correct, points },
-    })
-  })
-  await Promise.all(batch)
-  await updateDoc(doc(db, 'rooms', roomId), { status: 'answer' })
+  // Firestore batch limit = 500 ops. Split players into chunks of 499
+  // to leave 1 slot for the room status update in the last batch.
+  const CHUNK = 499
+  const chunks: Player[][] = []
+  for (let i = 0; i < players.length; i += CHUNK) {
+    chunks.push(players.slice(i, i + CHUNK))
+  }
+
+  for (let ci = 0; ci < chunks.length; ci++) {
+    const batch = writeBatch(db)
+    const isLast = ci === chunks.length - 1
+
+    for (const p of chunks[ci]) {
+      if (!p.lastAnswer) continue
+      const correct = p.lastAnswer.index === correctIndex
+      const points = correct ? (p.lastAnswer as any).pendingPoints ?? 0 : 0
+      batch.update(doc(db, 'rooms', roomId, 'players', p.id), {
+        score: (p.score ?? 0) + points,
+        lastAnswer: { ...p.lastAnswer, correct, points },
+      })
+    }
+
+    // Include the room status update in the last batch — 1 round trip instead of 2
+    if (isLast) {
+      batch.update(doc(db, 'rooms', roomId), { status: 'answer' })
+    }
+
+    await batch.commit()
+  }
+
+  // Edge case: no players at all
+  if (players.length === 0) {
+    await updateDoc(doc(db, 'rooms', roomId), { status: 'answer' })
+  }
 }
 
 export async function showLeaderboard(roomId: string): Promise<void> {
