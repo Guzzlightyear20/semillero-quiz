@@ -12,7 +12,8 @@ import {
   getDocs,
   addDoc,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { db, storage } from './firebase'
+import { ref, deleteObject } from 'firebase/storage'
 import type { Room, Player, Quiz, Question } from '@/types'
 
 function generateCode(): string {
@@ -45,6 +46,16 @@ export async function updateQuiz(quizId: string, title: string, questions: Quest
 }
 
 export async function deleteQuiz(quizId: string): Promise<void> {
+  const quiz = await getQuizById(quizId)
+  if (quiz) {
+    const imageUrls = quiz.questions
+      .map(q => q.imageUrl)
+      .filter((url): url is string => !!url && url.includes('firebasestorage.googleapis.com'))
+
+    await Promise.allSettled(
+      imageUrls.map(url => deleteObject(ref(storage, url)))
+    )
+  }
   await deleteDoc(doc(db, 'quizzes', quizId))
 }
 
