@@ -1,26 +1,17 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getQuizzesByHost, createRoom, deleteQuiz } from '@/lib/rooms'
+import { getQuizzesByHost, createRoom, deleteQuiz, validateTeacherCode } from '@/lib/rooms'
 import type { Quiz } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
 
-function getTeacherCodes(): Record<string, string> {
+function getFallbackCodes(): Record<string, string> {
   try {
     const raw = process.env.NEXT_PUBLIC_TEACHER_CODES
     if (raw) return JSON.parse(raw)
   } catch {}
-  // fallback: single password mode
   return { [process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? 'semillero2025']: 'Profe' }
-}
-
-const TEACHER_CODES = getTeacherCodes()
-
-function validateCode(code: string): { id: string; name: string } | null {
-  const name = TEACHER_CODES[code.trim().toUpperCase()] ?? TEACHER_CODES[code.trim()]
-  if (!name) return null
-  return { id: code.trim().toUpperCase(), name }
 }
 
 export default function AdminPage() {
@@ -54,12 +45,25 @@ export default function AdminPage() {
     setLoading(false)
   }
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    const result = validateCode(code)
+    setError('')
+    const upperCode = code.trim().toUpperCase()
+
+    // 1. Check Firestore (managed by coordinator)
+    let result = await validateTeacherCode(upperCode)
+
+    // 2. Fallback to env var codes (legacy / initial setup)
+    if (!result) {
+      const fallback = getFallbackCodes()
+      const name = fallback[upperCode] ?? fallback[code.trim()]
+      if (name) result = { id: upperCode, name, code: upperCode, createdAt: 0 }
+    }
+
     if (!result) return setError('Código incorrecto. Pedíselo a tu coordinador.')
-    localStorage.setItem('teacher_session', JSON.stringify(result))
-    setTeacher(result)
+    const session = { id: result.id, name: result.name }
+    localStorage.setItem('teacher_session', JSON.stringify(session))
+    setTeacher(session)
     loadQuizzes(result.id)
   }
 
@@ -110,6 +114,9 @@ export default function AdminPage() {
           {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
           <button type="submit" className="sq-btn-primary">Entrar →</button>
         </form>
+        <Link href="/admin/coordinador" style={{textAlign:'center',color:'var(--sq-muted)',fontSize:12,textDecoration:'none',marginTop:4}}>
+          ⚙️ Acceso coordinador
+        </Link>
       </div>
     </main>
   )

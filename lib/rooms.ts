@@ -199,3 +199,37 @@ export function subscribeWordResponses(
 export async function finishRoom(roomId: string): Promise<void> {
   await updateDoc(doc(db, 'rooms', roomId), { status: 'finished' })
 }
+
+// ── Teacher management ──────────────────────────────────────────────────────
+
+export interface Teacher {
+  id: string
+  name: string
+  code: string
+  createdAt: number
+}
+
+export async function getTeachers(): Promise<Teacher[]> {
+  const snap = await getDocs(collection(db, 'teachers'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Teacher))
+}
+
+export async function createTeacher(name: string, code: string): Promise<void> {
+  const id = code.trim().toUpperCase()
+  await setDoc(doc(db, 'teachers', id), {
+    name: name.trim(),
+    code: id,
+    createdAt: Date.now(),
+  })
+}
+
+export async function deleteTeacher(teacherId: string): Promise<void> {
+  await deleteDoc(doc(db, 'teachers', teacherId))
+}
+
+export async function validateTeacherCode(code: string): Promise<Teacher | null> {
+  const id = code.trim().toUpperCase()
+  const snap = await getDoc(doc(db, 'teachers', id))
+  if (!snap.exists()) return null
+  return { id: snap.id, ...snap.data() } as Teacher
+}
