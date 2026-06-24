@@ -10,6 +10,7 @@ const ANS_COLORS = ['#E84530','#3B82F6','#F5921E','#3ECFA3']
 const ANS_BG = ['rgba(232,69,48,.2)','rgba(59,130,246,.2)','rgba(245,146,30,.2)','rgba(62,207,163,.2)']
 const ANS_BORDER = ['rgba(232,69,48,.5)','rgba(59,130,246,.5)','rgba(245,146,30,.5)','rgba(62,207,163,.5)']
 const ANS_LABELS = ['A','B','C','D']
+const ANS_SHAPES = ['▲','◆','●','■']
 
 export default function HostPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -133,74 +134,88 @@ export default function HostPage() {
 
       {/* QUESTION */}
       {room.status === 'question' && currentQ && (
-        <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16}}>
-            <span style={{fontSize:13,color:'var(--sq-muted)',fontWeight:600}}>Pregunta {room.currentQuestion+1} de {quiz.questions.length}</span>
-            {countdown !== null && (
-              <div style={{
-                width:56,height:56,borderRadius:'50%',
-                background:countdown<=5?'#E84530':'var(--sq-purple)',
-                display:'flex',alignItems:'center',justifyContent:'center',
-                fontSize:24,fontWeight:900,color:'#fff',flexShrink:0,
-                transition:'background .3s'
-              }}>{countdown}</div>
-            )}
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:12}}>
+
+          {/* 1. Pregunta arriba, full width */}
+          <div style={{background:'rgba(255,255,255,.06)',borderRadius:16,padding:'18px 28px',textAlign:'center'}}>
+            <p style={{fontSize:12,color:'var(--sq-muted)',fontWeight:600,margin:'0 0 6px',textTransform:'uppercase',letterSpacing:'.06em'}}>
+              Pregunta {room.currentQuestion+1} de {quiz.questions.length}
+            </p>
+            <h2 style={{fontSize:26,fontWeight:900,margin:0,lineHeight:1.2}}>{currentQ.text}</h2>
           </div>
 
-          {/* Pregunta + imagen */}
-          <div style={{display:'flex',gap:16,alignItems:'stretch'}}>
-            <div className="sq-card" style={{padding:'20px 24px',flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <h2 style={{fontSize:24,fontWeight:800,margin:0,textAlign:'center'}}>{currentQ.text}</h2>
+          {/* 2. Fila del medio: timer | imagen | respuestas */}
+          <div style={{display:'flex',alignItems:'center',gap:16,flex:currentQ.imageUrl || qType==='wordcloud'?1:0,minHeight:currentQ.imageUrl?160:0}}>
+
+            {/* Timer circular */}
+            <div style={{
+              width:72,height:72,borderRadius:'50%',flexShrink:0,
+              background:countdown!==null&&countdown<=5?'#E84530':'var(--sq-purple)',
+              display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+              transition:'background .3s',boxShadow:'0 0 0 4px rgba(255,255,255,.1)'
+            }}>
+              <span style={{fontSize:26,fontWeight:900,color:'#fff',lineHeight:1}}>{countdown ?? '–'}</span>
             </div>
-            {currentQ.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={currentQ.imageUrl}
-                alt="imagen de pregunta"
-                style={{height:130,maxWidth:220,objectFit:'cover',borderRadius:16,flexShrink:0}}
-              />
-            )}
+
+            {/* Imagen centrada o nube de palabras */}
+            {qType === 'wordcloud' ? (
+              <div style={{flex:1,background:'rgba(255,255,255,.04)',border:'0.5px solid var(--sq-border)',borderRadius:16,padding:20,display:'flex',flexWrap:'wrap',gap:10,alignItems:'center',justifyContent:'center',minHeight:140,overflow:'hidden'}}>
+                {wordCloud.length === 0
+                  ? <p style={{color:'var(--sq-muted)',fontSize:18}}>Esperando respuestas...</p>
+                  : wordCloud.map(({word,count}) => {
+                      const size = 14 + Math.round((count/maxWordCount) * 32)
+                      const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)','#F87171','#FBBF24']
+                      const color = colors[Math.abs(word.charCodeAt(0)) % colors.length]
+                      return <span key={word} style={{fontSize:size,fontWeight:700,color,transition:'all .4s'}}>{word}</span>
+                    })
+                }
+              </div>
+            ) : currentQ.imageUrl ? (
+              <div style={{flex:1,display:'flex',justifyContent:'center'}}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentQ.imageUrl}
+                  alt="imagen de pregunta"
+                  style={{maxHeight:200,maxWidth:'100%',objectFit:'contain',borderRadius:16}}
+                />
+              </div>
+            ) : null}
+
+            {/* Contador de respuestas */}
+            <div style={{flexShrink:0,textAlign:'center',minWidth:72}}>
+              <p style={{fontSize:28,fontWeight:900,margin:0,color:'#fff'}}>
+                {qType==='wordcloud' ? wordCloud.length : players.filter(p=>p.lastAnswer).length}
+              </p>
+              <p style={{fontSize:11,color:'var(--sq-muted)',margin:0,fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>
+                {qType==='wordcloud' ? 'palabras' : 'respuestas'}
+              </p>
+            </div>
           </div>
 
-          {/* Opciones quiz/truefalse */}
+          {/* 3. Opciones abajo, full width */}
           {qType !== 'wordcloud' && (
-            <div className="sq-host-options" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1}}>
+            <div className="sq-host-options" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {(qType==='truefalse'
-                ? [{label:'✅ Verdadero',color:'#3ECFA3',bg:'rgba(62,207,163,.2)',border:'rgba(62,207,163,.5)'},
-                   {label:'❌ Falso',color:'#E84530',bg:'rgba(232,69,48,.2)',border:'rgba(232,69,48,.5)'}]
-                : currentQ.options.map((opt,i)=>({label:opt,color:ANS_COLORS[i],bg:ANS_BG[i],border:ANS_BORDER[i]}))
+                ? [{label:'✅ Verdadero',color:'#3ECFA3',bg:'#3ECFA3',shapes:'✅'},
+                   {label:'❌ Falso',color:'#E84530',bg:'#E84530',shapes:'❌'}]
+                : currentQ.options.map((opt,i)=>({label:opt,color:ANS_COLORS[i],bg:ANS_COLORS[i],shapes:ANS_SHAPES[i]}))
               ).map((item, i) => (
-                <div key={i} style={{background:item.bg,border:`1.5px solid ${item.border}`,borderRadius:16,padding:'20px 16px',display:'flex',alignItems:'center',gap:12}}>
-                  {qType==='quiz' && <span style={{width:36,height:36,borderRadius:10,background:ANS_COLORS[i],color:'#fff',fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{ANS_LABELS[i]}</span>}
-                  <span style={{fontWeight:700,fontSize:qType==='truefalse'?22:16,color:'#fff'}}>{item.label}</span>
+                <div key={i} style={{
+                  background:item.bg, borderRadius:14,
+                  padding:'14px 18px', display:'flex', alignItems:'center', gap:14
+                }}>
+                  <span style={{fontSize:22,color:'#fff',fontWeight:900,flexShrink:0}}>{item.shapes}</span>
+                  <span style={{fontWeight:800,fontSize:16,color:'#fff',lineHeight:1.2}}>{item.label}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Nube de palabras en tiempo real */}
-          {qType === 'wordcloud' && (
-            <div style={{flex:1,background:'rgba(255,255,255,.04)',border:'0.5px solid var(--sq-border)',borderRadius:16,padding:24,display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-              {wordCloud.length === 0
-                ? <p style={{color:'var(--sq-muted)',fontSize:18}}>Esperando respuestas...</p>
-                : wordCloud.map(({word,count}) => {
-                    const size = 14 + Math.round((count/maxWordCount) * 32)
-                    const opacity = 0.5 + (count/maxWordCount) * 0.5
-                    const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)','#F87171','#FBBF24']
-                    const color = colors[Math.abs(word.charCodeAt(0)) % colors.length]
-                    return <span key={word} style={{fontSize:size,fontWeight:700,color,opacity,transition:'all .4s'}}>{word}</span>
-                  })
-              }
-            </div>
-          )}
-
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <p style={{fontSize:13,color:'var(--sq-muted)',margin:0}}>
-              {qType==='wordcloud' ? `${wordCloud.length} respuestas` : `${players.filter(p=>p.lastAnswer).length} / ${players.length} respondieron`}
-            </p>
+          {/* Botón ver respuestas */}
+          <div style={{display:'flex',justifyContent:'flex-end'}}>
             <button
               onClick={handleShowAnswers}
-              style={{background:'var(--sq-orange)',color:'#fff',fontWeight:700,fontSize:14,padding:'10px 20px',borderRadius:10,border:'none',cursor:'pointer'}}
+              style={{background:'var(--sq-orange)',color:'#fff',fontWeight:700,fontSize:14,padding:'10px 24px',borderRadius:10,border:'none',cursor:'pointer'}}
             >
               {qType==='wordcloud'?'Cerrar nube →':'Ver respuestas →'}
             </button>
