@@ -100,8 +100,8 @@ export default function HostPage() {
       {room.status === 'waiting' && (
         <div className="flex-1 flex flex-col items-center justify-center gap-8">
           <div className="text-center">
-            <p className="text-gray-400 mb-2">Los alumnos se unen en</p>
-            <p className="text-2xl font-bold text-white">semillero-quiz / unirse</p>
+            <p className="text-gray-400 mb-2">Los alumnos entran en</p>
+            <p className="text-2xl font-bold text-white break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/unirse</p>
             <p className="text-gray-400 mt-1">con el código:</p>
             <p className="font-mono font-black text-6xl tracking-widest text-violet-400 mt-2">{room.code}</p>
           </div>
