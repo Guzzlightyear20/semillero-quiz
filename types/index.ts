@@ -1,5 +1,8 @@
+export type QuestionType = 'quiz' | 'truefalse' | 'wordcloud'
+
 export interface Question {
   text: string
+  type?: QuestionType
   options: [string, string, string, string]
   correctIndex: 0 | 1 | 2 | 3
   timeLimit: number

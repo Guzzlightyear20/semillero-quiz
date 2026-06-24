@@ -11,9 +11,17 @@ const ANS_BG = ['rgba(232,69,48,.25)', 'rgba(59,130,246,.25)', 'rgba(245,146,30,
 const ANS_LABELS = ['A', 'B', 'C', 'D']
 const ANS_SHAPES = ['▲', '◆', '●', '■']
 
-function emptyQuestion(): Question {
-  return { text: '', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }
+function emptyQuestion(type: Question['type'] = 'quiz'): Question {
+  if (type === 'truefalse') return { text: '', type: 'truefalse', options: ['Verdadero', 'Falso', '', ''], correctIndex: 0, timeLimit: 20 }
+  if (type === 'wordcloud') return { text: '', type: 'wordcloud', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30 }
+  return { text: '', type: 'quiz', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }
 }
+
+const QUESTION_TYPES = [
+  { type: 'quiz' as const, label: '🔤 Quiz', desc: '4 opciones' },
+  { type: 'truefalse' as const, label: '✅ V / F', desc: 'Verdadero o Falso' },
+  { type: 'wordcloud' as const, label: '☁️ Nube', desc: 'Palabra libre' },
+]
 
 function EditorQuiz() {
   const router = useRouter()
@@ -55,9 +63,19 @@ function EditorQuiz() {
     }))
   }
 
-  function addQuestion() {
-    setQuestions(qs => [...qs, emptyQuestion()])
+  function addQuestion(type: Question['type'] = 'quiz') {
+    setQuestions(qs => [...qs, emptyQuestion(type)])
     setActive(questions.length)
+  }
+
+  function changeType(type: Question['type']) {
+    const base = emptyQuestion(type)
+    setQuestions(qs => qs.map((item, i) => i !== active ? item : {
+      ...base,
+      text: item.text,
+      imageUrl: item.imageUrl,
+      timeLimit: item.timeLimit,
+    }))
   }
 
   function removeQuestion(i: number) {
@@ -132,7 +150,11 @@ function EditorQuiz() {
                 }}>
                   {q.text || 'Sin pregunta'}
                 </p>
-                <span style={{ fontSize: 11, color: 'var(--sq-muted)' }}>{q.timeLimit}s</span>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.timeLimit}s</span>
+                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>·</span>
+                  <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.type === 'truefalse' ? 'V/F' : q.type === 'wordcloud' ? '☁️' : 'Quiz'}</span>
+                </div>
               </div>
               {questions.length > 1 && (
                 <button
@@ -146,17 +168,22 @@ function EditorQuiz() {
           ))}
         </div>
 
-        <div style={{ padding: 10, borderTop: '0.5px solid var(--sq-border)' }}>
-          <button
-            onClick={addQuestion}
-            style={{
-              width: '100%', background: 'var(--sq-green)', color: '#0D4A38',
-              fontWeight: 800, fontSize: 13, padding: '10px', borderRadius: 10,
-              border: 'none', cursor: 'pointer'
-            }}
-          >
-            + Agregar pregunta
-          </button>
+        <div style={{ padding: 10, borderTop: '0.5px solid var(--sq-border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {QUESTION_TYPES.map(({ type, label }) => (
+            <button
+              key={type}
+              onClick={() => addQuestion(type)}
+              style={{
+                width: '100%',
+                background: type === 'quiz' ? 'var(--sq-green)' : type === 'truefalse' ? 'rgba(62,207,163,.2)' : 'rgba(92,107,192,.2)',
+                border: `0.5px solid ${type === 'quiz' ? 'transparent' : 'var(--sq-border)'}`,
+                color: type === 'quiz' ? '#0D4A38' : '#fff',
+                fontWeight: 700, fontSize: 12, padding: '8px', borderRadius: 8, cursor: 'pointer'
+              }}
+            >
+              + {label}
+            </button>
+          ))}
         </div>
       </aside>
 
@@ -194,6 +221,25 @@ function EditorQuiz() {
 
         {/* Question area */}
         <div style={{ flex: 1, padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto' }}>
+
+          {/* Tipo de pregunta */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {QUESTION_TYPES.map(({ type, label, desc }) => (
+              <button
+                key={type}
+                onClick={() => changeType(type)}
+                style={{
+                  flex: 1, padding: '10px 8px', borderRadius: 12, cursor: 'pointer',
+                  border: `1.5px solid ${(q.type ?? 'quiz') === type ? 'var(--sq-green)' : 'var(--sq-border)'}`,
+                  background: (q.type ?? 'quiz') === type ? 'rgba(62,207,163,.12)' : 'var(--sq-subtle)',
+                  color: '#fff', textAlign: 'center'
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--sq-muted)' }}>{desc}</p>
+              </button>
+            ))}
+          </div>
 
           {/* Question text */}
           <div style={{
@@ -274,55 +320,45 @@ function EditorQuiz() {
             ))}
           </div>
 
-          {/* Answer options */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            {q.options.map((opt, oi) => (
-              <div
-                key={oi}
-                style={{
-                  background: ANS_BG[oi],
-                  border: `2px solid ${q.correctIndex === oi ? ANS_COLORS[oi] : 'rgba(255,255,255,.08)'}`,
-                  borderRadius: 14, padding: '16px',
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  transition: 'border-color .15s'
-                }}
-              >
-                <span style={{
-                  fontSize: 18, color: ANS_COLORS[oi], fontWeight: 900,
-                  width: 28, textAlign: 'center', flexShrink: 0
-                }}>
-                  {ANS_SHAPES[oi]}
-                </span>
-                <input
-                  value={opt}
-                  onChange={e => updateOption(oi, e.target.value)}
-                  placeholder={`Opción ${ANS_LABELS[oi]}`}
-                  style={{
-                    flex: 1, background: 'none', border: 'none', outline: 'none',
-                    color: '#fff', fontSize: 15, fontWeight: 600,
-                    fontFamily: 'inherit'
-                  }}
-                />
-                <button
-                  onClick={() => updateQ('correctIndex', oi)}
-                  title="Marcar como correcta"
-                  style={{
-                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${q.correctIndex === oi ? ANS_COLORS[oi] : 'rgba(255,255,255,.25)'}`,
-                    background: q.correctIndex === oi ? ANS_COLORS[oi] : 'transparent',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 14, color: '#fff', transition: 'all .15s'
-                  }}
-                >
-                  {q.correctIndex === oi ? '✓' : ''}
-                </button>
+          {/* Answer options — condicional por tipo */}
+          {(q.type ?? 'quiz') === 'quiz' && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                {q.options.map((opt, oi) => (
+                  <div key={oi} style={{ background: ANS_BG[oi], border: `2px solid ${q.correctIndex === oi ? ANS_COLORS[oi] : 'rgba(255,255,255,.08)'}`, borderRadius: 14, padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 18, color: ANS_COLORS[oi], fontWeight: 900, width: 28, textAlign: 'center', flexShrink: 0 }}>{ANS_SHAPES[oi]}</span>
+                    <input value={opt} onChange={e => updateOption(oi, e.target.value)} placeholder={`Opción ${ANS_LABELS[oi]}`} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 15, fontWeight: 600, fontFamily: 'inherit' }} />
+                    <button onClick={() => updateQ('correctIndex', oi)} style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, border: `2px solid ${q.correctIndex === oi ? ANS_COLORS[oi] : 'rgba(255,255,255,.25)'}`, background: q.correctIndex === oi ? ANS_COLORS[oi] : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff' }}>
+                      {q.correctIndex === oi ? '✓' : ''}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <p style={{ fontSize: 12, color: 'var(--sq-muted)', textAlign: 'center', margin: 0 }}>Hacé click en el círculo para marcar la correcta</p>
+            </>
+          )}
 
-          <p style={{ fontSize: 12, color: 'var(--sq-muted)', textAlign: 'center', margin: 0 }}>
-            Hacé click en el círculo de la derecha para marcar la respuesta correcta
-          </p>
+          {(q.type ?? 'quiz') === 'truefalse' && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                {[{ label: '✅ Verdadero', color: '#3ECFA3', bg: 'rgba(62,207,163,.2)', idx: 0 }, { label: '❌ Falso', color: '#E84530', bg: 'rgba(232,69,48,.2)', idx: 1 }].map(({ label, color, bg, idx }) => (
+                  <div key={idx} onClick={() => updateQ('correctIndex', idx)} style={{ background: bg, border: `2px solid ${q.correctIndex === idx ? color : 'rgba(255,255,255,.08)'}`, borderRadius: 14, padding: '24px 16px', textAlign: 'center', cursor: 'pointer', transition: 'border-color .15s' }}>
+                    <p style={{ fontSize: 20, fontWeight: 900, color, margin: 0 }}>{label}</p>
+                    {q.correctIndex === idx && <p style={{ fontSize: 12, color, margin: '6px 0 0', fontWeight: 600 }}>✓ Respuesta correcta</p>}
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--sq-muted)', textAlign: 'center', margin: 0 }}>Hacé click en la respuesta correcta</p>
+            </>
+          )}
+
+          {(q.type ?? 'quiz') === 'wordcloud' && (
+            <div style={{ background: 'rgba(92,107,192,.15)', border: '1.5px dashed rgba(92,107,192,.4)', borderRadius: 14, padding: '28px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 32, margin: '0 0 10px' }}>☁️</p>
+              <p style={{ fontWeight: 700, fontSize: 16, margin: '0 0 6px' }}>Nube de palabras</p>
+              <p style={{ color: 'var(--sq-muted)', fontSize: 13, margin: 0 }}>Los alumnos escriben una palabra libre. Las más repetidas aparecen más grandes en el proyector.</p>
+            </div>
+          )}
         </div>
       </main>
     </div>

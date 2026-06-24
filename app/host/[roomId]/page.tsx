@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { subscribeRoom, subscribePlayers, advanceToQuestion, showAnswers, showLeaderboard, finishRoom } from '@/lib/rooms'
+import { subscribeRoom, subscribePlayers, advanceToQuestion, showAnswers, showLeaderboard, finishRoom, subscribeWordResponses } from '@/lib/rooms'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Player, Quiz } from '@/types'
@@ -18,6 +18,7 @@ export default function HostPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [wordCloud, setWordCloud] = useState<{ word: string; count: number }[]>([])
 
   useEffect(() => {
     const u1 = subscribeRoom(roomId, setRoom)
@@ -31,6 +32,13 @@ export default function HostPage() {
       if (d.exists()) setQuiz({ id: d.id, ...d.data() } as Quiz)
     })
   }, [room?.quizId])
+
+  useEffect(() => {
+    if (!room || !quiz) return
+    const currentQ = quiz.questions[room.currentQuestion]
+    if (currentQ?.type !== 'wordcloud') return
+    return subscribeWordResponses(roomId, room.currentQuestion, setWordCloud)
+  }, [roomId, room?.currentQuestion, room?.status, quiz])
 
   useEffect(() => {
     if (room?.status !== 'question' || !room.questionStartedAt || !quiz) return
@@ -66,6 +74,8 @@ export default function HostPage() {
   )
 
   const currentQ = quiz.questions[room.currentQuestion]
+  const qType = currentQ?.type ?? 'quiz'
+  const maxWordCount = wordCloud[0]?.count ?? 1
 
   return (
     <main className="min-h-screen flex flex-col p-6" style={{maxWidth:900,margin:'0 auto'}}>
@@ -152,26 +162,47 @@ export default function HostPage() {
             )}
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1}}>
-            {currentQ.options.map((opt, i) => (
-              <div key={i} style={{background:ANS_BG[i],border:`1.5px solid ${ANS_BORDER[i]}`,borderRadius:16,padding:'20px 16px',display:'flex',alignItems:'center',gap:12}}>
-                <span style={{width:36,height:36,borderRadius:10,background:ANS_COLORS[i],color:'#fff',fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  {ANS_LABELS[i]}
-                </span>
-                <span style={{fontWeight:700,fontSize:16,color:'#fff'}}>{opt}</span>
-              </div>
-            ))}
-          </div>
+          {/* Opciones quiz/truefalse */}
+          {qType !== 'wordcloud' && (
+            <div style={{display:'grid',gridTemplateColumns: qType==='truefalse'?'1fr 1fr':'1fr 1fr',gap:12,flex:1}}>
+              {(qType==='truefalse'
+                ? [{label:'✅ Verdadero',color:'#3ECFA3',bg:'rgba(62,207,163,.2)',border:'rgba(62,207,163,.5)'},
+                   {label:'❌ Falso',color:'#E84530',bg:'rgba(232,69,48,.2)',border:'rgba(232,69,48,.5)'}]
+                : currentQ.options.map((opt,i)=>({label:opt,color:ANS_COLORS[i],bg:ANS_BG[i],border:ANS_BORDER[i]}))
+              ).map((item, i) => (
+                <div key={i} style={{background:item.bg,border:`1.5px solid ${item.border}`,borderRadius:16,padding:'20px 16px',display:'flex',alignItems:'center',gap:12}}>
+                  {qType==='quiz' && <span style={{width:36,height:36,borderRadius:10,background:ANS_COLORS[i],color:'#fff',fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{ANS_LABELS[i]}</span>}
+                  <span style={{fontWeight:700,fontSize:qType==='truefalse'?22:16,color:'#fff'}}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Nube de palabras en tiempo real */}
+          {qType === 'wordcloud' && (
+            <div style={{flex:1,background:'rgba(255,255,255,.04)',border:'0.5px solid var(--sq-border)',borderRadius:16,padding:24,display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+              {wordCloud.length === 0
+                ? <p style={{color:'var(--sq-muted)',fontSize:18}}>Esperando respuestas...</p>
+                : wordCloud.map(({word,count}) => {
+                    const size = 14 + Math.round((count/maxWordCount) * 32)
+                    const opacity = 0.5 + (count/maxWordCount) * 0.5
+                    const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)','#F87171','#FBBF24']
+                    const color = colors[Math.abs(word.charCodeAt(0)) % colors.length]
+                    return <span key={word} style={{fontSize:size,fontWeight:700,color,opacity,transition:'all .4s'}}>{word}</span>
+                  })
+              }
+            </div>
+          )}
 
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <p style={{fontSize:13,color:'var(--sq-muted)',margin:0}}>
-              {players.filter(p=>p.lastAnswer).length} / {players.length} respondieron
+              {qType==='wordcloud' ? `${wordCloud.length} respuestas` : `${players.filter(p=>p.lastAnswer).length} / ${players.length} respondieron`}
             </p>
             <button
               onClick={handleShowAnswers}
               style={{background:'var(--sq-orange)',color:'#fff',fontWeight:700,fontSize:14,padding:'10px 20px',borderRadius:10,border:'none',cursor:'pointer'}}
             >
-              Ver respuestas →
+              {qType==='wordcloud'?'Cerrar nube →':'Ver respuestas →'}
             </button>
           </div>
         </div>
@@ -189,22 +220,34 @@ export default function HostPage() {
               <img src={currentQ.imageUrl} alt="" style={{height:90,maxWidth:160,objectFit:'cover',borderRadius:14,flexShrink:0}} />
             )}
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {currentQ.options.map((opt, i) => (
-              <div key={i} style={{
-                background: i===currentQ.correctIndex ? ANS_BG[i] : 'rgba(255,255,255,.04)',
-                border: `1.5px solid ${i===currentQ.correctIndex ? ANS_COLORS[i] : 'rgba(255,255,255,.1)'}`,
-                borderRadius:16,padding:'16px',display:'flex',alignItems:'center',gap:10,
-                opacity: i===currentQ.correctIndex ? 1 : 0.4
-              }}>
-                <span style={{width:32,height:32,borderRadius:8,background:i===currentQ.correctIndex?ANS_COLORS[i]:'rgba(255,255,255,.1)',color:'#fff',fontWeight:900,fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  {ANS_LABELS[i]}
-                </span>
-                <span style={{fontWeight:700,fontSize:15,color:'#fff'}}>{opt}</span>
-                {i===currentQ.correctIndex && <span style={{marginLeft:'auto',fontSize:20}}>✓</span>}
-              </div>
-            ))}
-          </div>
+          {qType === 'wordcloud' ? (
+            <div style={{flex:1,background:'rgba(255,255,255,.04)',border:'0.5px solid var(--sq-border)',borderRadius:16,padding:24,display:'flex',flexWrap:'wrap',gap:14,alignItems:'center',justifyContent:'center'}}>
+              {wordCloud.map(({word,count}) => {
+                const size = 16 + Math.round((count/maxWordCount) * 36)
+                const colors = ['var(--sq-green)','var(--sq-orange)','var(--sq-blue)','var(--sq-purple)','#F87171','#FBBF24']
+                const color = colors[Math.abs(word.charCodeAt(0)) % colors.length]
+                return <span key={word} style={{fontSize:size,fontWeight:700,color}}>{word} <span style={{fontSize:12,opacity:.6}}>×{count}</span></span>
+              })}
+            </div>
+          ) : (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {(qType==='truefalse'
+                ? ['✅ Verdadero','❌ Falso']
+                : currentQ.options
+              ).map((opt, i) => (
+                <div key={i} style={{
+                  background: i===currentQ.correctIndex ? ANS_BG[i] : 'rgba(255,255,255,.04)',
+                  border: `1.5px solid ${i===currentQ.correctIndex ? ANS_COLORS[i] : 'rgba(255,255,255,.1)'}`,
+                  borderRadius:16,padding:'16px',display:'flex',alignItems:'center',gap:10,
+                  opacity: i===currentQ.correctIndex ? 1 : 0.4
+                }}>
+                  {qType==='quiz' && <span style={{width:32,height:32,borderRadius:8,background:i===currentQ.correctIndex?ANS_COLORS[i]:'rgba(255,255,255,.1)',color:'#fff',fontWeight:900,fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{ANS_LABELS[i]}</span>}
+                  <span style={{fontWeight:700,fontSize:15,color:'#fff'}}>{opt}</span>
+                  {i===currentQ.correctIndex && <span style={{marginLeft:'auto',fontSize:20}}>✓</span>}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="sq-card" style={{padding:16}}>
             <p style={{fontSize:12,color:'var(--sq-muted)',margin:'0 0 10px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Resultados</p>
             <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:160,overflowY:'auto'}}>

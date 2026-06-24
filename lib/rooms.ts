@@ -147,6 +147,33 @@ export async function showLeaderboard(roomId: string): Promise<void> {
   await updateDoc(doc(db, 'rooms', roomId), { status: 'leaderboard' })
 }
 
+export async function submitWord(roomId: string, playerId: string, word: string, questionIndex: number): Promise<void> {
+  await setDoc(doc(db, 'rooms', roomId, 'wordResponses', playerId), {
+    word: word.trim().toLowerCase(),
+    questionIndex,
+  })
+}
+
+export function subscribeWordResponses(
+  roomId: string,
+  questionIndex: number,
+  cb: (words: { word: string; count: number }[]) => void
+) {
+  return onSnapshot(collection(db, 'rooms', roomId, 'wordResponses'), (snap) => {
+    const freq: Record<string, number> = {}
+    snap.docs
+      .filter(d => d.data().questionIndex === questionIndex)
+      .forEach(d => {
+        const w = d.data().word as string
+        freq[w] = (freq[w] ?? 0) + 1
+      })
+    const sorted = Object.entries(freq)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+    cb(sorted)
+  })
+}
+
 export async function finishRoom(roomId: string): Promise<void> {
   await updateDoc(doc(db, 'rooms', roomId), { status: 'finished' })
 }
