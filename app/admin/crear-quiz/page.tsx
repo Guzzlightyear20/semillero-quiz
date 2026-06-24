@@ -75,8 +75,11 @@ function EditorQuiz() {
   }
 
   function addQuestion(type: Question['type'] = 'quiz') {
-    setQuestions(qs => [...qs, emptyQuestion(type)])
-    setActive(questions.length)
+    setQuestions(qs => {
+      const next = [...qs, emptyQuestion(type)]
+      setTimeout(() => setActive(next.length - 1), 0)
+      return next
+    })
   }
 
   function changeType(type: Question['type']) {
@@ -216,7 +219,7 @@ function EditorQuiz() {
               cursor: saving || !title.trim() ? 'not-allowed' : 'pointer'
             }}
           >
-            {saving ? 'Guardando...' : editId ? '💾 Guardar cambios' : '💾 Guardar quiz'}
+            {saving ? 'Guardando...' : editId ? `💾 Guardar (${questions.length}p)` : `💾 Guardar (${questions.length}p)`}
           </button>
         </div>
 
