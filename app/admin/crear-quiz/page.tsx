@@ -118,13 +118,19 @@ function EditorQuiz() {
     )
     if (!valid) return alert('Completá todas las preguntas y opciones.')
     setSaving(true)
-    const teacherId = getTeacherId()
-    if (editId) {
-      await updateQuiz(editId, title.trim(), questions)
-    } else {
-      await createQuiz(title.trim(), questions, teacherId)
+    try {
+      const teacherId = getTeacherId()
+      if (editId) {
+        await updateQuiz(editId, title.trim(), questions)
+      } else {
+        await createQuiz(title.trim(), questions, teacherId)
+      }
+      router.push('/admin')
+    } catch (err) {
+      console.error(err)
+      alert('Error al guardar. Revisá tu conexión y volvé a intentar.')
+      setSaving(false)
     }
-    router.push('/admin')
   }
 
   if (loading) return (
