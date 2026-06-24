@@ -12,7 +12,7 @@ export default function Home() {
             alt="Semillero Digital"
             width={200}
             height={80}
-            style={{objectFit:'contain',marginBottom:20,filter:'brightness(0) invert(1)'}}
+            style={{objectFit:'contain',marginBottom:20,filter:'none'}}
             priority
           />
           <h1 style={{fontSize:48,fontWeight:900,lineHeight:1.05,margin:'0 0 8px',letterSpacing:'-1px'}}>

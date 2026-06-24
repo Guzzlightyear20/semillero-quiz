@@ -70,7 +70,7 @@ export default function CoordinadorPage() {
     <main className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-xs flex flex-col gap-5">
         <div className="text-center flex flex-col items-center">
-          <Image src="/logo.png" alt="Semillero Digital" width={180} height={70} style={{objectFit:'contain',marginBottom:16,filter:'brightness(0) invert(1)'}} priority />
+          <Image src="/logo.png" alt="Semillero Digital" width={180} height={70} style={{objectFit:'contain',marginBottom:16,filter:'none'}} priority />
           <h1 style={{fontSize:22,fontWeight:900,margin:'0 0 4px'}}>Panel coordinador</h1>
           <p style={{color:'var(--sq-muted)',fontSize:14,margin:0}}>Ingresá el código maestro</p>
         </div>
@@ -99,7 +99,7 @@ export default function CoordinadorPage() {
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:28}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <Image src="/logo.png" alt="Semillero Digital" width={110} height={42} style={{objectFit:'contain',filter:'brightness(0) invert(1)'}} />
+          <Image src="/logo.png" alt="Semillero Digital" width={110} height={42} style={{objectFit:'contain',filter:'none'}} />
           <div>
             <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Panel</p>
             <h1 style={{fontSize:18,fontWeight:900,margin:0}}>Coordinador</h1>
