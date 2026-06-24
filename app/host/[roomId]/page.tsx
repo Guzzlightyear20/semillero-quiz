@@ -204,32 +204,83 @@ export default function HostPage() {
         </div>
       )}
 
-      {/* LEADERBOARD / FINISHED */}
+      {/* LEADERBOARD / FINISHED — Podio estilo Kahoot */}
       {(room.status === 'leaderboard' || room.status === 'finished') && (
-        <div style={{flex:1,display:'flex',flexDirection:'column',gap:14}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
           <h2 style={{fontSize:26,fontWeight:900,textAlign:'center',margin:0}}>
             {room.status==='finished' ? '🏆 Resultado final' : '📊 Ranking'}
           </h2>
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {sortedPlayers.slice(0,10).map((p, i) => {
-              const medals = ['🥇','🥈','🥉']
-              const bgs = ['rgba(245,158,11,.2)','rgba(156,163,175,.2)','rgba(234,88,12,.2)']
-              const borders = ['rgba(245,158,11,.5)','rgba(156,163,175,.5)','rgba(234,88,12,.5)']
-              return (
-                <div key={p.id} style={{
-                  background: i<3 ? bgs[i] : 'var(--sq-subtle)',
-                  border: `0.5px solid ${i<3 ? borders[i] : 'var(--sq-border)'}`,
-                  borderRadius:14,padding:'12px 18px',
-                  display:'flex',alignItems:'center',gap:14
-                }}>
-                  <span style={{fontSize:22,width:32,textAlign:'center'}}>{i<3?medals[i]:i+1}</span>
-                  <span style={{fontSize:22}}>{p.emoji}</span>
-                  <span style={{fontWeight:700,fontSize:16,flex:1}}>{p.name}</span>
-                  <span style={{fontWeight:900,fontSize:18,color:'var(--sq-green)'}}>{p.score} pts</span>
+
+          {/* PODIO top 3 */}
+          {sortedPlayers.length >= 1 && (
+            <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center',gap:12,padding:'0 16px'}}>
+              {/* 2do lugar */}
+              {sortedPlayers[1] && (
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,flex:1}}>
+                  <span style={{fontSize:28}}>{sortedPlayers[1].emoji}</span>
+                  <p style={{fontWeight:700,fontSize:13,margin:0,textAlign:'center'}}>{sortedPlayers[1].name}</p>
+                  <p style={{fontSize:12,color:'var(--sq-muted)',margin:0}}>{sortedPlayers[1].score} pts</p>
+                  <div style={{
+                    width:'100%', height:80,
+                    background:'rgba(156,163,175,.25)',
+                    border:'1.5px solid rgba(156,163,175,.5)',
+                    borderRadius:'10px 10px 0 0',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:28,fontWeight:900,color:'#9CA3AF'
+                  }}>🥈</div>
                 </div>
-              )
-            })}
-          </div>
+              )}
+              {/* 1er lugar */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,flex:1}}>
+                <span style={{fontSize:36}}>{sortedPlayers[0].emoji}</span>
+                <p style={{fontWeight:800,fontSize:14,margin:0,textAlign:'center'}}>{sortedPlayers[0].name}</p>
+                <p style={{fontSize:12,color:'var(--sq-green)',fontWeight:700,margin:0}}>{sortedPlayers[0].score} pts</p>
+                <div style={{
+                  width:'100%', height:110,
+                  background:'rgba(245,158,11,.25)',
+                  border:'1.5px solid rgba(245,158,11,.6)',
+                  borderRadius:'10px 10px 0 0',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  fontSize:36,fontWeight:900
+                }}>🥇</div>
+              </div>
+              {/* 3er lugar */}
+              {sortedPlayers[2] && (
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,flex:1}}>
+                  <span style={{fontSize:28}}>{sortedPlayers[2].emoji}</span>
+                  <p style={{fontWeight:700,fontSize:13,margin:0,textAlign:'center'}}>{sortedPlayers[2].name}</p>
+                  <p style={{fontSize:12,color:'var(--sq-muted)',margin:0}}>{sortedPlayers[2].score} pts</p>
+                  <div style={{
+                    width:'100%', height:60,
+                    background:'rgba(234,88,12,.2)',
+                    border:'1.5px solid rgba(234,88,12,.5)',
+                    borderRadius:'10px 10px 0 0',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:24,fontWeight:900,color:'#EA580C'
+                  }}>🥉</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* resto del ranking */}
+          {sortedPlayers.length > 3 && (
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {sortedPlayers.slice(3,8).map((p, i) => (
+                <div key={p.id} style={{
+                  background:'var(--sq-subtle)', border:'0.5px solid var(--sq-border)',
+                  borderRadius:10, padding:'10px 16px',
+                  display:'flex', alignItems:'center', gap:12
+                }}>
+                  <span style={{fontSize:14,fontWeight:700,color:'var(--sq-muted)',width:20}}>{i+4}</span>
+                  <span style={{fontSize:20}}>{p.emoji}</span>
+                  <span style={{fontWeight:600,fontSize:14,flex:1}}>{p.name}</span>
+                  <span style={{fontWeight:800,fontSize:15,color:'var(--sq-green)'}}>{p.score} pts</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {room.status==='leaderboard' && (
             <button onClick={handleNext} className="sq-btn-primary">
               {room.currentQuestion>=quiz.questions.length-1 ? '🏁 Finalizar' : 'Siguiente pregunta →'}
