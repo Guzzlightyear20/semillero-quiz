@@ -124,16 +124,32 @@ export default function HostPage() {
       {/* QUESTION */}
       {room.status === 'question' && currentQ && (
         <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
-          <div style={{textAlign:'center'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginBottom:12}}>
-              <span style={{fontSize:13,color:'var(--sq-muted)',fontWeight:600}}>Pregunta {room.currentQuestion+1} de {quiz.questions.length}</span>
-              {countdown !== null && (
-                <span style={{fontSize:36,fontWeight:900,color:countdown<=5?'#F87171':'var(--sq-orange)'}}>{countdown}s</span>
-              )}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16}}>
+            <span style={{fontSize:13,color:'var(--sq-muted)',fontWeight:600}}>Pregunta {room.currentQuestion+1} de {quiz.questions.length}</span>
+            {countdown !== null && (
+              <div style={{
+                width:56,height:56,borderRadius:'50%',
+                background:countdown<=5?'#E84530':'var(--sq-purple)',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:24,fontWeight:900,color:'#fff',flexShrink:0,
+                transition:'background .3s'
+              }}>{countdown}</div>
+            )}
+          </div>
+
+          {/* Pregunta + imagen */}
+          <div style={{display:'flex',gap:16,alignItems:'stretch'}}>
+            <div className="sq-card" style={{padding:'20px 24px',flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <h2 style={{fontSize:24,fontWeight:800,margin:0,textAlign:'center'}}>{currentQ.text}</h2>
             </div>
-            <div className="sq-card" style={{padding:'20px 24px'}}>
-              <h2 style={{fontSize:24,fontWeight:800,margin:0}}>{currentQ.text}</h2>
-            </div>
+            {currentQ.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={currentQ.imageUrl}
+                alt="imagen de pregunta"
+                style={{height:130,maxWidth:220,objectFit:'cover',borderRadius:16,flexShrink:0}}
+              />
+            )}
           </div>
 
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1}}>
@@ -164,8 +180,14 @@ export default function HostPage() {
       {/* ANSWER */}
       {room.status === 'answer' && currentQ && (
         <div style={{flex:1,display:'flex',flexDirection:'column',gap:16}}>
-          <div className="sq-card" style={{padding:'16px 20px',textAlign:'center'}}>
-            <h2 style={{fontSize:20,fontWeight:800,margin:0}}>{currentQ.text}</h2>
+          <div style={{display:'flex',gap:16,alignItems:'stretch'}}>
+            <div className="sq-card" style={{padding:'16px 20px',flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <h2 style={{fontSize:20,fontWeight:800,margin:0,textAlign:'center'}}>{currentQ.text}</h2>
+            </div>
+            {currentQ.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={currentQ.imageUrl} alt="" style={{height:90,maxWidth:160,objectFit:'cover',borderRadius:14,flexShrink:0}} />
+            )}
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             {currentQ.options.map((opt, i) => (

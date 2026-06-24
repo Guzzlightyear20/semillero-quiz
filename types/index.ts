@@ -3,6 +3,7 @@ export interface Question {
   options: [string, string, string, string]
   correctIndex: 0 | 1 | 2 | 3
   timeLimit: number
+  imageUrl?: string
 }
 
 export interface Quiz {

@@ -214,6 +214,46 @@ function EditorQuiz() {
             />
           </div>
 
+          {/* Image URL */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, color: 'var(--sq-muted)', fontWeight: 600, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                🖼 Imagen (opcional — pegá una URL)
+              </p>
+              <input
+                value={q.imageUrl ?? ''}
+                onChange={e => updateQ('imageUrl', e.target.value)}
+                placeholder="https://..."
+                style={{
+                  width: '100%', background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)',
+                  borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
+                  outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit'
+                }}
+              />
+            </div>
+            {q.imageUrl && (
+              <div style={{ flexShrink: 0, position: 'relative' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={q.imageUrl}
+                  alt="preview"
+                  style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 10, border: '0.5px solid var(--sq-border)' }}
+                  onError={e => (e.currentTarget.style.display = 'none')}
+                />
+                <button
+                  onClick={() => updateQ('imageUrl', '')}
+                  style={{
+                    position: 'absolute', top: -6, right: -6,
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: '#E84530', border: 'none', color: '#fff',
+                    fontSize: 11, fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >×</button>
+              </div>
+            )}
+          </div>
+
           {/* Time selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 13, color: 'var(--sq-muted)', fontWeight: 600 }}>⏱ Tiempo:</span>
