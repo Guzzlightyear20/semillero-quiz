@@ -352,16 +352,24 @@ export default function HostPage() {
             </button>
           )}
           {room.status==='finished' && (
-            <button
-              onClick={async () => {
-                const { createRoom } = await import('@/lib/rooms')
-                const newRoomId = await createRoom(room.quizId, room.hostId)
-                router.push(`/host/${newRoomId}`)
-              }}
-              style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-text)',fontWeight:700,fontSize:15,padding:'14px',borderRadius:14,cursor:'pointer',width:'100%'}}
-            >
-              🔄 Nueva partida
-            </button>
+            <div style={{display:'flex',gap:10}}>
+              <button
+                onClick={async () => {
+                  const { createRoom } = await import('@/lib/rooms')
+                  const newRoomId = await createRoom(room.quizId, room.hostId)
+                  router.push(`/host/${newRoomId}`)
+                }}
+                style={{flex:1,background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-text)',fontWeight:700,fontSize:15,padding:'14px',borderRadius:14,cursor:'pointer'}}
+              >
+                🔄 Nueva partida
+              </button>
+              <button
+                onClick={() => router.push('/admin')}
+                style={{flex:1,background:'var(--sq-green)',color:'var(--sq-green-dark)',fontWeight:800,fontSize:15,padding:'14px',borderRadius:14,border:'none',cursor:'pointer'}}
+              >
+                ← Volver al panel
+              </button>
+            </div>
           )}
         </div>
       )}

@@ -282,6 +282,12 @@ export default function JugarPage() {
               <p style={{ color: 'var(--sq-muted)', margin: 0, fontSize: 14 }}>{myData.score} pts finales</p>
             </div>
           )}
+          <a
+            href="/"
+            style={{ background: 'var(--sq-green)', color: 'var(--sq-green-dark)', fontWeight: 800, fontSize: 16, padding: '14px 32px', borderRadius: 14, textDecoration: 'none', display: 'inline-block', marginTop: 8 }}
+          >
+            Volver al inicio
+          </a>
         </div>
       )}
     </main>
