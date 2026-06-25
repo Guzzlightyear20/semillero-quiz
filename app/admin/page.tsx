@@ -227,8 +227,8 @@ export default function AdminPage() {
 
       {/* Modal de células */}
       {teamModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.7)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,zIndex:100}}>
-          <div className="sq-card" style={{width:'100%',maxWidth:400,padding:24,display:'flex',flexDirection:'column',gap:16}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.8)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,zIndex:100}}>
+          <div style={{width:'100%',maxWidth:400,padding:24,display:'flex',flexDirection:'column',gap:16,background:'#1A1D22',border:'0.5px solid var(--sq-border)',borderRadius:20}}>
             <h2 style={{fontSize:20,fontWeight:900,margin:0}}>Configurar partida</h2>
 
             {/* Toggle células */}
