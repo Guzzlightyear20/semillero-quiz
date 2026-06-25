@@ -1,10 +1,72 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { subscribeRoom, submitAnswer, subscribePlayers, submitWord } from '@/lib/rooms'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Quiz, Player } from '@/types'
+
+function FinishedScreen({ ranking, myData }: { ranking: number; myData: Player | null }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (ranking > 3) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const ctx = canvas.getContext('2d')!
+    const colors = ['#3ECFA3','#F5921E','#5BBDE8','#C084FC','#F87171','#FBBF24']
+    const pieces = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      w: 8 + Math.random() * 8,
+      h: 4 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      speed: 2 + Math.random() * 4,
+      spin: (Math.random() - 0.5) * 0.15,
+    }))
+    let frame: number
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      pieces.forEach(p => {
+        p.y += p.speed; p.rot += p.spin
+        if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width }
+        ctx.save()
+        ctx.translate(p.x + p.w / 2, p.y + p.h / 2)
+        ctx.rotate(p.rot)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+      })
+      frame = requestAnimationFrame(draw)
+    }
+    draw()
+    const stop = setTimeout(() => cancelAnimationFrame(frame), 5000)
+    return () => { cancelAnimationFrame(frame); clearTimeout(stop) }
+  }, [ranking])
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center', padding: 24, position: 'relative' }}>
+      {ranking <= 3 && (
+        <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 10 }} />
+      )}
+      <div style={{ fontSize: 64 }}>{ranking === 1 ? '🏆' : ranking === 2 ? '🥈' : ranking === 3 ? '🥉' : '🎉'}</div>
+      <h2 style={{ fontSize: 30, fontWeight: 900, margin: 0 }}>¡Partida terminada!</h2>
+      {myData && (
+        <div style={{ background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)', borderRadius: 16, padding: '20px 40px' }}>
+          <p style={{ fontSize: 20, margin: '0 0 4px' }}>{myData.emoji} {myData.name}</p>
+          <p style={{ fontWeight: 900, fontSize: 48, color: 'var(--sq-green)', margin: '0 0 2px', lineHeight: 1 }}>#{ranking}</p>
+          <p style={{ color: 'var(--sq-muted)', margin: 0, fontSize: 14 }}>{myData.score} pts finales</p>
+        </div>
+      )}
+      <a href="/" style={{ background: 'var(--sq-green)', color: 'var(--sq-green-dark)', fontWeight: 800, fontSize: 16, padding: '14px 32px', borderRadius: 14, textDecoration: 'none', display: 'inline-block', marginTop: 8 }}>
+        Volver al inicio
+      </a>
+    </div>
+  )
+}
 
 const ANS_COLORS = ['#E84530', '#3B82F6', '#F5921E', '#3ECFA3']
 const ANS_SHAPES = ['▲', '◆', '●', '■']
@@ -287,23 +349,7 @@ export default function JugarPage() {
 
       {/* FINISHED */}
       {room.status === 'finished' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center', padding: 24 }}>
-          <div style={{ fontSize: 64 }}>{ranking === 1 ? '🏆' : ranking === 2 ? '🥈' : ranking === 3 ? '🥉' : '🎉'}</div>
-          <h2 style={{ fontSize: 30, fontWeight: 900, margin: 0 }}>¡Partida terminada!</h2>
-          {myData && (
-            <div style={{ background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)', borderRadius: 16, padding: '20px 40px' }}>
-              <p style={{ fontSize: 20, margin: '0 0 4px' }}>{myData.emoji} {myData.name}</p>
-              <p style={{ fontWeight: 900, fontSize: 48, color: 'var(--sq-green)', margin: '0 0 2px', lineHeight: 1 }}>#{ranking}</p>
-              <p style={{ color: 'var(--sq-muted)', margin: 0, fontSize: 14 }}>{myData.score} pts finales</p>
-            </div>
-          )}
-          <a
-            href="/"
-            style={{ background: 'var(--sq-green)', color: 'var(--sq-green-dark)', fontWeight: 800, fontSize: 16, padding: '14px 32px', borderRadius: 14, textDecoration: 'none', display: 'inline-block', marginTop: 8 }}
-          >
-            Volver al inicio
-          </a>
-        </div>
+        <FinishedScreen ranking={ranking} myData={myData} />
       )}
     </main>
   )

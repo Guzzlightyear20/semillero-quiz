@@ -82,6 +82,26 @@ function EditorQuiz() {
     })
   }
 
+  function duplicateQuestion(i: number) {
+    setQuestions(qs => {
+      const copy = { ...qs[i], options: [...qs[i].options] as Question['options'] }
+      const next = [...qs.slice(0, i + 1), copy, ...qs.slice(i + 1)]
+      setTimeout(() => setActive(i + 1), 0)
+      return next
+    })
+  }
+
+  function moveQuestion(i: number, dir: -1 | 1) {
+    const j = i + dir
+    setQuestions(qs => {
+      if (j < 0 || j >= qs.length) return qs
+      const next = [...qs]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return next
+    })
+    setActive(j)
+  }
+
   function changeType(type: Question['type']) {
     const base = emptyQuestion(type)
     setQuestions(qs => qs.map((item, i) => i !== active ? item : {
@@ -179,9 +199,14 @@ function EditorQuiz() {
                   <span style={{ fontSize: 10, color: 'var(--sq-muted)' }}>{q.timeLimit}s · {q.type === 'truefalse' ? 'V/F' : q.type === 'wordcloud' ? '☁️' : 'Quiz'}</span>
                 </div>
               </div>
-              {questions.length > 1 && (
-                <button onClick={e => { e.stopPropagation(); removeQuestion(i) }} style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 14, padding: '0 0 0 4px', lineHeight: 1 }}>×</button>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }} onClick={e => e.stopPropagation()}>
+                <button onClick={() => moveQuestion(i, -1)} disabled={i === 0} style={{ background: 'none', border: 'none', color: i === 0 ? 'rgba(255,255,255,.15)' : 'var(--sq-muted)', cursor: i === 0 ? 'default' : 'pointer', fontSize: 10, padding: '1px 3px', lineHeight: 1 }}>▲</button>
+                <button onClick={() => moveQuestion(i, 1)} disabled={i === questions.length - 1} style={{ background: 'none', border: 'none', color: i === questions.length - 1 ? 'rgba(255,255,255,.15)' : 'var(--sq-muted)', cursor: i === questions.length - 1 ? 'default' : 'pointer', fontSize: 10, padding: '1px 3px', lineHeight: 1 }}>▼</button>
+                <button onClick={() => duplicateQuestion(i)} style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 10, padding: '1px 3px', lineHeight: 1 }}>⧉</button>
+                {questions.length > 1 && (
+                  <button onClick={() => removeQuestion(i)} style={{ background: 'none', border: 'none', color: 'var(--sq-muted)', cursor: 'pointer', fontSize: 12, padding: '1px 3px', lineHeight: 1 }}>×</button>
+                )}
+              </div>
             </div>
           ))}
         </div>

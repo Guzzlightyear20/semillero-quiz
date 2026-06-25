@@ -239,9 +239,25 @@ export async function deleteTeacher(teacherId: string): Promise<void> {
   await deleteDoc(doc(db, 'teachers', teacherId))
 }
 
+export async function updateTeacherName(teacherId: string, name: string): Promise<void> {
+  await updateDoc(doc(db, 'teachers', teacherId), { name: name.trim() })
+}
+
 export async function validateTeacherCode(code: string): Promise<Teacher | null> {
   const id = code.trim().toUpperCase()
   const snap = await getDoc(doc(db, 'teachers', id))
   if (!snap.exists()) return null
   return { id: snap.id, ...snap.data() } as Teacher
+}
+
+export async function duplicateQuiz(quizId: string, hostId: string): Promise<string> {
+  const quiz = await getQuizById(quizId)
+  if (!quiz) throw new Error('Quiz not found')
+  const ref = await addDoc(collection(db, 'quizzes'), {
+    title: `${quiz.title} (copia)`,
+    questions: quiz.questions,
+    createdBy: hostId,
+    createdAt: Date.now(),
+  })
+  return ref.id
 }

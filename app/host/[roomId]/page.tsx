@@ -109,40 +109,58 @@ export default function HostPage() {
       {room.status === 'waiting' && (
         <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:24}}>
           <div className="sq-card" style={{padding:'20px 32px',textAlign:'center'}}>
-            <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 8px'}}>Los alumnos entran en</p>
+            <div style={{display:'flex',gap:24,alignItems:'center',justifyContent:'center',flexWrap:'wrap'}}>
+              {/* QR code */}
+              <div>
+                {typeof window !== 'undefined' && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(window.location.origin + '/unirse')}&bgcolor=0D0F12&color=3ECFA3&margin=10`}
+                    alt="QR code"
+                    width={140} height={140}
+                    style={{borderRadius:12}}
+                  />
+                )}
+              </div>
 
-            {/* URL con botón copiar */}
-            <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 14px',marginBottom:12}}>
-              <p style={{fontSize:16,fontWeight:700,color:'var(--sq-blue)',margin:0}}>
-                {typeof window !== 'undefined' ? window.location.origin : ''}/unirse
-              </p>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/unirse`)
-                  const btn = document.getElementById('copy-url-btn')
-                  if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
-                }}
-                id="copy-url-btn"
-                title="Copiar URL"
-                style={{background:'rgba(91,189,232,.2)',border:'0.5px solid rgba(91,189,232,.4)',color:'var(--sq-blue)',fontWeight:700,fontSize:13,padding:'4px 10px',borderRadius:6,cursor:'pointer',flexShrink:0}}
-              >⧉</button>
-            </div>
+              {/* URL + código */}
+              <div style={{textAlign:'center'}}>
+                <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 8px'}}>Los alumnos entran en</p>
+
+                {/* URL con botón copiar */}
+                <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 14px',marginBottom:12}}>
+                  <p style={{fontSize:16,fontWeight:700,color:'var(--sq-blue)',margin:0}}>
+                    {typeof window !== 'undefined' ? window.location.origin : ''}/unirse
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/unirse`)
+                      const btn = document.getElementById('copy-url-btn')
+                      if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
+                    }}
+                    id="copy-url-btn"
+                    title="Copiar URL"
+                    style={{background:'rgba(91,189,232,.2)',border:'0.5px solid rgba(91,189,232,.4)',color:'var(--sq-blue)',fontWeight:700,fontSize:13,padding:'4px 10px',borderRadius:6,cursor:'pointer',flexShrink:0}}
+                  >⧉</button>
+                </div>
 
             <p style={{fontSize:13,color:'var(--sq-muted)',margin:'0 0 8px'}}>con el código</p>
 
-            {/* Código con botón copiar */}
-            <div style={{display:'inline-flex',alignItems:'center',gap:12}}>
-              <p style={{fontFamily:'monospace',fontWeight:900,fontSize:52,letterSpacing:'.2em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(room.code)
-                  const btn = document.getElementById('copy-code-btn')
-                  if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
-                }}
-                id="copy-code-btn"
-                title="Copiar código"
-                style={{background:'rgba(62,207,163,.2)',border:'0.5px solid rgba(62,207,163,.4)',color:'var(--sq-green)',fontWeight:700,fontSize:16,padding:'8px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
-              >⧉</button>
+                {/* Código con botón copiar */}
+                <div style={{display:'inline-flex',alignItems:'center',gap:12}}>
+                  <p style={{fontFamily:'monospace',fontWeight:900,fontSize:52,letterSpacing:'.2em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(room.code)
+                      const btn = document.getElementById('copy-code-btn')
+                      if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '⧉' }, 1500) }
+                    }}
+                    id="copy-code-btn"
+                    title="Copiar código"
+                    style={{background:'rgba(62,207,163,.2)',border:'0.5px solid rgba(62,207,163,.4)',color:'var(--sq-green)',fontWeight:700,fontSize:16,padding:'8px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
+                  >⧉</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -317,9 +335,31 @@ export default function HostPage() {
               ))}
             </div>
           )}
+          {/* Estadísticas por opción */}
+          {qType === 'quiz' && currentQ && (
+            <div className="sq-card" style={{padding:16}}>
+              <p style={{fontSize:12,color:'var(--sq-muted)',margin:'0 0 10px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Distribución de respuestas</p>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {currentQ.options.map((opt, i) => {
+                  const count = players.filter(p => p.lastAnswer?.index === i).length
+                  const pct = players.length ? Math.round((count / players.length) * 100) : 0
+                  return (
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:13,color:ANS_COLORS[i],fontWeight:700,width:16,flexShrink:0}}>{ANS_LABELS[i]}</span>
+                      <div style={{flex:1,background:'rgba(255,255,255,.06)',borderRadius:6,overflow:'hidden',height:20}}>
+                        <div style={{width:`${pct}%`,height:'100%',background: i===currentQ.correctIndex ? ANS_COLORS[i] : `${ANS_COLORS[i]}66`,transition:'width .5s',borderRadius:6}}/>
+                      </div>
+                      <span style={{fontSize:12,color:'var(--sq-muted)',minWidth:36,textAlign:'right'}}>{count} ({pct}%)</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="sq-card" style={{padding:16}}>
-            <p style={{fontSize:12,color:'var(--sq-muted)',margin:'0 0 10px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Resultados</p>
-            <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:160,overflowY:'auto'}}>
+            <p style={{fontSize:12,color:'var(--sq-muted)',margin:'0 0 10px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.05em'}}>Resultados individuales</p>
+            <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:140,overflowY:'auto'}}>
               {sortedPlayers.map(p => (
                 <div key={p.id} style={{display:'flex',alignItems:'center',gap:10}}>
                   <span>{p.emoji}</span>

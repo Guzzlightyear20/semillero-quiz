@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getTeachers, createTeacher, deleteTeacher, Teacher } from '@/lib/rooms'
+import { getTeachers, createTeacher, deleteTeacher, updateTeacherName, Teacher } from '@/lib/rooms'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -16,6 +16,8 @@ export default function CoordinadorPage() {
   const [newCode, setNewCode] = useState('')
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
@@ -56,6 +58,13 @@ export default function CoordinadorPage() {
     setNewCode('')
     await loadTeachers()
     setCreating(false)
+  }
+
+  async function handleEditName(t: Teacher) {
+    if (!editName.trim() || editName.trim() === t.name) return setEditing(null)
+    await updateTeacherName(t.id, editName.trim())
+    setTeachers(ts => ts.map(x => x.id === t.id ? { ...x, name: editName.trim() } : x))
+    setEditing(null)
   }
 
   async function handleDelete(t: Teacher) {
@@ -163,16 +172,43 @@ export default function CoordinadorPage() {
           {teachers.map(t => (
             <div key={t.id} className="sq-card" style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:12}}>
               <div style={{flex:1,minWidth:0}}>
-                <p style={{fontWeight:700,fontSize:15,margin:'0 0 3px'}}>{t.name}</p>
-                <p style={{fontFamily:'monospace',fontSize:13,color:'var(--sq-green)',margin:0,letterSpacing:'.05em'}}>{t.code}</p>
+                {editing === t.id ? (
+                  <div style={{display:'flex',gap:6}}>
+                    <input
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleEditName(t); if (e.key === 'Escape') setEditing(null) }}
+                      autoFocus
+                      className="sq-input"
+                      style={{fontSize:14,flex:1}}
+                    />
+                    <button onClick={() => handleEditName(t)} style={{background:'var(--sq-green)',border:'none',color:'#0D4A38',fontWeight:700,fontSize:12,padding:'6px 10px',borderRadius:8,cursor:'pointer'}}>✓</button>
+                    <button onClick={() => setEditing(null)} style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontSize:12,padding:'6px 10px',borderRadius:8,cursor:'pointer'}}>✗</button>
+                  </div>
+                ) : (
+                  <>
+                    <p style={{fontWeight:700,fontSize:15,margin:'0 0 3px'}}>{t.name}</p>
+                    <p style={{fontFamily:'monospace',fontSize:13,color:'var(--sq-green)',margin:0,letterSpacing:'.05em'}}>{t.code}</p>
+                  </>
+                )}
               </div>
-              <button
-                onClick={() => handleDelete(t)}
-                disabled={deleting === t.id}
-                style={{background:'rgba(248,113,113,.1)',border:'0.5px solid rgba(248,113,113,.3)',color:'#F87171',fontWeight:600,fontSize:12,padding:'7px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
-              >
-                {deleting === t.id ? '...' : 'Eliminar'}
-              </button>
+              {editing !== t.id && (
+                <div style={{display:'flex',gap:6}}>
+                  <button
+                    onClick={() => { setEditing(t.id); setEditName(t.name) }}
+                    style={{background:'rgba(91,189,232,.1)',border:'0.5px solid rgba(91,189,232,.3)',color:'var(--sq-blue)',fontWeight:600,fontSize:12,padding:'7px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t)}
+                    disabled={deleting === t.id}
+                    style={{background:'rgba(248,113,113,.1)',border:'0.5px solid rgba(248,113,113,.3)',color:'#F87171',fontWeight:600,fontSize:12,padding:'7px 12px',borderRadius:8,cursor:'pointer',flexShrink:0}}
+                  >
+                    {deleting === t.id ? '...' : '🗑️'}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

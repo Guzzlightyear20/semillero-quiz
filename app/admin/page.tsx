@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getQuizzesByHost, createRoom, deleteQuiz, validateTeacherCode } from '@/lib/rooms'
+import { getQuizzesByHost, createRoom, deleteQuiz, validateTeacherCode, duplicateQuiz } from '@/lib/rooms'
 import type { Quiz } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -79,6 +79,12 @@ export default function AdminPage() {
     setTeacher(null)
     setQuizzes([])
     setCode('')
+  }
+
+  async function handleDuplicate(quizId: string) {
+    if (!teacher) return
+    await duplicateQuiz(quizId, teacher.id)
+    await loadQuizzes(teacher.id)
   }
 
   function openLaunch(quizId: string) {
@@ -194,6 +200,12 @@ export default function AdminPage() {
                 >
                   ✏️ Editar
                 </Link>
+                <button
+                  onClick={() => handleDuplicate(q.id)}
+                  style={{flex:1,background:'rgba(91,189,232,.1)',border:'0.5px solid rgba(91,189,232,.3)',color:'var(--sq-blue)',fontWeight:600,fontSize:13,padding:'10px 8px',borderRadius:8,cursor:'pointer'}}
+                >
+                  📋 Duplicar
+                </button>
                 <button
                   onClick={() => handleDelete(q.id, q.title)}
                   disabled={deleting === q.id}
