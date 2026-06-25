@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { getTeachers, createTeacher, deleteTeacher, updateTeacherName, Teacher } from '@/lib/rooms'
+import { getTeachers, createTeacher, deleteTeacher, updateTeacherName, getTeacherSettings, updateTeacherSettings, Teacher } from '@/lib/rooms'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -18,12 +18,15 @@ export default function CoordinadorPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [openAnswerEnabled, setOpenAnswerEnabled] = useState(false)
+  const GLOBAL_TEACHER_ID = 'semillero-global'
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
     if (sessionStorage.getItem('coord_authed') === 'true') {
       setAuthed(true)
       loadTeachers()
+      getTeacherSettings(GLOBAL_TEACHER_ID).then(s => setOpenAnswerEnabled(s.openAnswerEnabled))
     }
   }, [])
 
@@ -153,6 +156,27 @@ export default function CoordinadorPage() {
             {creating ? 'Creando...' : 'Crear profe'}
           </button>
         </form>
+      </div>
+
+      {/* Configuración global */}
+      <div className="sq-card" style={{padding:16,marginBottom:20}}>
+        <p style={{fontSize:13,fontWeight:700,margin:'0 0 14px',color:'var(--sq-orange)',textTransform:'uppercase',letterSpacing:'.05em'}}>⚙️ Configuración global</p>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <div>
+            <p style={{fontWeight:700,fontSize:14,margin:'0 0 2px'}}>Respuesta abierta</p>
+            <p style={{color:'var(--sq-muted)',fontSize:12,margin:0}}>Permite que los profes usen preguntas de texto libre</p>
+          </div>
+          <button
+            onClick={async () => {
+              const next = !openAnswerEnabled
+              setOpenAnswerEnabled(next)
+              await updateTeacherSettings(GLOBAL_TEACHER_ID, { openAnswerEnabled: next })
+            }}
+            style={{ width:48,height:26,borderRadius:99,border:'none',cursor:'pointer', background: openAnswerEnabled ? 'var(--sq-green)' : 'rgba(255,255,255,.2)', transition:'background .2s',position:'relative',flexShrink:0 }}
+          >
+            <span style={{ position:'absolute',top:3,left: openAnswerEnabled ? 25 : 3, width:20,height:20,borderRadius:'50%',background:'#fff',transition:'left .2s',display:'block' }}/>
+          </button>
+        </div>
       </div>
 
       {/* Lista de profes */}

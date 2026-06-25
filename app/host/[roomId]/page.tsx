@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { subscribeRoom, subscribePlayers, advanceToQuestion, showAnswers, showLeaderboard, finishRoom, subscribeWordResponses } from '@/lib/rooms'
+import { subscribeRoom, subscribePlayers, advanceToQuestion, showAnswers, showLeaderboard, finishRoom, subscribeWordResponses, saveGameHistory } from '@/lib/rooms'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Player, Quiz } from '@/types'
+import { soundStart, soundFinish } from '@/lib/sounds'
 
 const ANS_COLORS = ['#E84530','#3B82F6','#F5921E','#3ECFA3']
 const ANS_BG = ['rgba(232,69,48,.2)','rgba(59,130,246,.2)','rgba(245,146,30,.2)','rgba(62,207,163,.2)']
@@ -63,8 +64,16 @@ export default function HostPage() {
     const isLast = room.currentQuestion >= quiz.questions.length - 1
     if (room.status === 'answer') await showLeaderboard(roomId)
     else if (room.status === 'leaderboard') {
-      if (isLast) await finishRoom(roomId)
-      else { await advanceToQuestion(roomId, room.currentQuestion + 1); setCountdown(null) }
+      if (isLast) {
+        await finishRoom(roomId)
+        soundFinish()
+        const teacherId = JSON.parse(localStorage.getItem('teacher_session') ?? '{}').id ?? ''
+        await saveGameHistory(roomId, room.quizId, quiz.title, teacherId, players)
+      } else {
+        await advanceToQuestion(roomId, room.currentQuestion + 1)
+        setCountdown(null)
+        soundStart()
+      }
     }
   }
 
@@ -194,7 +203,7 @@ export default function HostPage() {
           ) : null}
 
           <button
-            onClick={() => advanceToQuestion(roomId, 0)}
+            onClick={() => { advanceToQuestion(roomId, 0); soundStart() }}
             disabled={players.length === 0}
             className="sq-btn-primary"
             style={{width:'auto',padding:'14px 40px',fontSize:18}}

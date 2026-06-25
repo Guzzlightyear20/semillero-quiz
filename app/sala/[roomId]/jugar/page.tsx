@@ -5,6 +5,74 @@ import { subscribeRoom, submitAnswer, subscribePlayers, submitWord } from '@/lib
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Room, Quiz, Player } from '@/types'
+import { soundCorrect, soundWrong, soundTick, soundCountdownEnd } from '@/lib/sounds'
+
+function SortQuestion({ question, options, countdown, onSubmit, submitted }: {
+  question: string; options: string[]; countdown: number | null
+  onSubmit: (order: number[]) => void; submitted: boolean
+}) {
+  const [shuffled] = useState(() => {
+    const arr = options.map((o, i) => ({ text: o, idx: i }))
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]]
+    }
+    return arr
+  })
+  const [selected, setSelected] = useState<number[]>([])
+  const colors = ['#3ECFA3','#F5921E','#5BBDE8','#C084FC']
+
+  function tap(i: number) {
+    if (selected.includes(i)) {
+      setSelected(s => s.filter(x => x !== i))
+    } else {
+      const next = [...selected, i]
+      setSelected(next)
+      if (next.length === shuffled.length) onSubmit(next)
+    }
+  }
+
+  if (submitted) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 56 }}>✅</div>
+      <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>¡Orden enviado!</p>
+      <p style={{ color: 'var(--sq-muted)', margin: 0, fontSize: 14 }}>Esperando al resto...</p>
+    </div>
+  )
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ textAlign: 'center', padding: '12px 16px 8px' }}>
+        {countdown !== null && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, borderRadius: '50%', background: countdown <= 5 ? '#E84530' : 'var(--sq-purple)', fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 10 }}>
+            {countdown}
+          </div>
+        )}
+        <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>{question}</h2>
+        <p style={{ color: 'var(--sq-muted)', fontSize: 12, margin: '4px 0 0' }}>Tapeá en orden del 1ro al último</p>
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, padding: '8px 16px 16px' }}>
+        {shuffled.map((item, i) => {
+          const pos = selected.indexOf(i)
+          const isSelected = pos !== -1
+          return (
+            <button key={i} onClick={() => tap(i)} style={{
+              background: isSelected ? colors[pos % colors.length] : 'var(--sq-subtle)',
+              border: `1.5px solid ${isSelected ? colors[pos % colors.length] : 'var(--sq-border)'}`,
+              borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+              cursor: 'pointer', transition: 'all .1s'
+            }}>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: isSelected ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0 }}>
+                {isSelected ? pos + 1 : ''}
+              </span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>{item.text}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function FinishedScreen({ ranking, myData }: { ranking: number; myData: Player | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -110,7 +178,8 @@ export default function JugarPage() {
       const elapsed = Math.floor((Date.now() - room.questionStartedAt!) / 1000)
       const remaining = q.timeLimit - elapsed
       setCountdown(Math.max(0, remaining))
-      if (remaining <= 0) clearInterval(interval)
+      if (remaining <= 5 && remaining > 0) soundTick()
+      if (remaining <= 0) { clearInterval(interval); soundCountdownEnd() }
     }, 500)
     return () => clearInterval(interval)
   }, [room?.status, room?.questionStartedAt, room?.currentQuestion])
@@ -120,13 +189,23 @@ export default function JugarPage() {
     return subscribePlayers(roomId, (players) => {
       const sorted = [...players].sort((a, b) => b.score - a.score)
       const me = players.find((p) => p.id === playerId)
-      if (me) { setMyData(me); setRanking(sorted.findIndex((p) => p.id === playerId) + 1) }
+      if (me) {
+        const wasAnswered = myData?.lastAnswer
+        const nowCorrect = me.lastAnswer?.correct
+        if (!wasAnswered && me.lastAnswer) {
+          if (nowCorrect) soundCorrect()
+          else soundWrong()
+        }
+        setMyData(me)
+        setRanking(sorted.findIndex((p) => p.id === playerId) + 1)
+      }
     })
   }, [roomId, playerId])
 
   async function handleAnswer(index: number) {
     if (!room || !quiz || answered !== null || !playerId) return
     setAnswered(index)
+    soundTick()
     await submitAnswer(roomId, playerId, index, room.questionStartedAt!, quiz.questions[room.currentQuestion].timeLimit)
   }
 
@@ -215,6 +294,22 @@ export default function JugarPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* QUESTION — Ordenar items */}
+      {room.status === 'question' && currentQ && qType === 'sort' && (
+        <SortQuestion
+          question={currentQ.text}
+          options={[...currentQ.options]}
+          countdown={countdown}
+          onSubmit={async (order) => {
+            if (!playerId) return
+            setAnswered(0)
+            soundTick()
+            await submitAnswer(roomId, playerId, 0, room.questionStartedAt!, currentQ.timeLimit)
+          }}
+          submitted={answered !== null}
+        />
       )}
 
       {/* QUESTION — Verdadero/Falso */}

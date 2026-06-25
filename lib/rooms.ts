@@ -212,6 +212,50 @@ export async function finishRoom(roomId: string): Promise<void> {
   await updateDoc(doc(db, 'rooms', roomId), { status: 'finished' })
 }
 
+export async function saveGameHistory(
+  roomId: string,
+  quizId: string,
+  quizTitle: string,
+  teacherId: string,
+  players: Player[]
+): Promise<void> {
+  const sorted = [...players].sort((a, b) => b.score - a.score)
+  await setDoc(doc(db, 'gameHistory', roomId), {
+    quizId,
+    quizTitle,
+    teacherId,
+    date: Date.now(),
+    playerCount: players.length,
+    players: sorted.map((p, i) => ({
+      name: p.name,
+      emoji: p.emoji,
+      team: p.team ?? null,
+      score: p.score,
+      position: i + 1,
+    })),
+  })
+}
+
+export async function getGameHistory(teacherId: string) {
+  const q = query(
+    collection(db, 'gameHistory'),
+    where('teacherId', '==', teacherId)
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a: any, b: any) => b.date - a.date)
+}
+
+export async function getTeacherSettings(teacherId: string): Promise<{ openAnswerEnabled: boolean }> {
+  const snap = await getDoc(doc(db, 'teacherSettings', teacherId))
+  if (!snap.exists()) return { openAnswerEnabled: false }
+  return snap.data() as { openAnswerEnabled: boolean }
+}
+
+export async function updateTeacherSettings(teacherId: string, settings: { openAnswerEnabled: boolean }): Promise<void> {
+  await setDoc(doc(db, 'teacherSettings', teacherId), settings)
+}
+
 // ── Teacher management ──────────────────────────────────────────────────────
 
 export interface Teacher {

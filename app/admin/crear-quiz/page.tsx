@@ -23,6 +23,7 @@ const ANS_SHAPES = ['▲', '◆', '●', '■']
 function emptyQuestion(type: Question['type'] = 'quiz'): Question {
   if (type === 'truefalse') return { text: '', type: 'truefalse', options: ['Verdadero', 'Falso', '', ''], correctIndex: 0, timeLimit: 20 }
   if (type === 'wordcloud') return { text: '', type: 'wordcloud', options: ['', '', '', ''], correctIndex: 0, timeLimit: 30 }
+  if (type === 'sort') return { text: '', type: 'sort', options: ['', '', '', ''], correctIndex: 0, timeLimit: 40 }
   return { text: '', type: 'quiz', options: ['', '', '', ''], correctIndex: 0, timeLimit: 20 }
 }
 
@@ -30,6 +31,7 @@ const QUESTION_TYPES = [
   { type: 'quiz' as const, label: '🔤 Quiz', desc: '4 opciones' },
   { type: 'truefalse' as const, label: '✅ V / F', desc: 'Verdadero o Falso' },
   { type: 'wordcloud' as const, label: '☁️ Nube', desc: 'Palabra libre' },
+  { type: 'sort' as const, label: '🔢 Ordenar', desc: 'Secuencia correcta' },
 ]
 
 function EditorQuiz() {
@@ -415,8 +417,92 @@ function EditorQuiz() {
               <p style={{ color: 'var(--sq-muted)', fontSize: 13, margin: 0 }}>Los alumnos escriben una palabra libre. Las más repetidas aparecen más grandes en el proyector.</p>
             </div>
           )}
+
+          {(q.type ?? 'quiz') === 'sort' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <p style={{ fontSize: 12, color: 'var(--sq-muted)', fontWeight: 600, margin: 0, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  🔢 Orden correcto (de 1ro a 4to)
+                </p>
+                {q.options.map((opt, oi) => (
+                  <div key={oi} style={{ background: ANS_BG[oi], border: `1.5px solid ${ANS_COLORS[oi]}44`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: ANS_COLORS[oi], width: 28, textAlign: 'center', flexShrink: 0 }}>{oi + 1}</span>
+                    <input value={opt} onChange={e => updateOption(oi, e.target.value)} placeholder={`Elemento ${oi + 1}`} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 15, fontWeight: 600, fontFamily: 'inherit' }} />
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--sq-muted)', textAlign: 'center', margin: 0 }}>Los alumnos los verán mezclados y deberán ordenarlos</p>
+            </>
+          )}
+
+          {/* Importar desde texto */}
+          <ImportarTexto onImport={(qs) => {
+            setQuestions(prev => {
+              const current = prev.filter(q => q.text.trim())
+              const merged = [...current, ...qs]
+              setTimeout(() => setActive(current.length), 0)
+              return merged
+            })
+          }} />
         </div>
       </main>
+    </div>
+  )
+}
+
+function ImportarTexto({ onImport }: { onImport: (qs: Question[]) => void }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+
+  function parse() {
+    const blocks = text.trim().split(/\n\s*\n/)
+    const parsed: Question[] = []
+    for (const block of blocks) {
+      const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean)
+      if (lines.length < 5) continue
+      const q: Question = {
+        text: lines[0],
+        type: 'quiz',
+        options: ['', '', '', ''] as unknown as [string, string, string, string],
+        correctIndex: 0,
+        timeLimit: 20,
+      }
+      let cIdx = 0
+      let oCount = 0
+      for (let i = 1; i < lines.length && oCount < 4; i++) {
+        const isCorrect = lines[i].startsWith('*')
+        const opt = lines[i].replace(/^\*/, '').trim()
+        q.options[oCount] = opt
+        if (isCorrect) cIdx = oCount
+        oCount++
+      }
+      q.correctIndex = cIdx as 0 | 1 | 2 | 3
+      parsed.push(q)
+    }
+    if (parsed.length === 0) return alert('No se encontraron preguntas válidas. Revisá el formato.')
+    onImport(parsed)
+    setText('')
+    setOpen(false)
+  }
+
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: 'none', border: '0.5px dashed var(--sq-border)', color: 'var(--sq-muted)', fontSize: 12, padding: '8px', borderRadius: 10, cursor: 'pointer', width: '100%' }}>
+      📥 Importar preguntas desde texto
+    </button>
+  )
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,.04)', border: '0.5px solid var(--sq-border)', borderRadius: 14, padding: 16 }}>
+      <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 6px', color: 'var(--sq-green)' }}>📥 Importar desde texto</p>
+      <p style={{ fontSize: 11, color: 'var(--sq-muted)', margin: '0 0 10px' }}>
+        Formato: pregunta en la primera línea, opciones debajo. Marcá la correcta con <code style={{ color: 'var(--sq-orange)' }}>*</code>. Separar preguntas con una línea en blanco.
+      </p>
+      <pre style={{ fontSize: 10, color: 'var(--sq-muted)', background: 'rgba(0,0,0,.3)', borderRadius: 8, padding: 8, margin: '0 0 10px', whiteSpace: 'pre-wrap' }}>{`¿Capital de Argentina?\nBuenos Aires\n*Córdoba\nMendoza\nRosario\n\n¿2+2?\n*4\n3\n5\n22`}</pre>
+      <textarea value={text} onChange={e => setText(e.target.value)} rows={8} placeholder="Pegá tus preguntas acá..." style={{ width: '100%', background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, resize: 'vertical', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }} />
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button onClick={parse} disabled={!text.trim()} style={{ flex: 2, background: 'var(--sq-green)', color: '#0D4A38', fontWeight: 700, fontSize: 13, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer' }}>Importar</button>
+        <button onClick={() => setOpen(false)} style={{ flex: 1, background: 'var(--sq-subtle)', border: '0.5px solid var(--sq-border)', color: 'var(--sq-muted)', fontSize: 13, padding: '10px', borderRadius: 10, cursor: 'pointer' }}>Cancelar</button>
+      </div>
     </div>
   )
 }

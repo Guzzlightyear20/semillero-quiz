@@ -159,6 +159,12 @@ export default function AdminPage() {
           >
             + Nuevo
           </Link>
+          <Link
+            href="/admin/historial"
+            style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontWeight:600,fontSize:13,padding:'8px 14px',borderRadius:10,textDecoration:'none',whiteSpace:'nowrap'}}
+          >
+            📜
+          </Link>
           <button
             onClick={handleLogout}
             style={{background:'var(--sq-subtle)',border:'0.5px solid var(--sq-border)',color:'var(--sq-muted)',fontSize:13,padding:'8px 14px',borderRadius:10,cursor:'pointer',whiteSpace:'nowrap'}}

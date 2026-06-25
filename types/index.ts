@@ -1,4 +1,4 @@
-export type QuestionType = 'quiz' | 'truefalse' | 'wordcloud'
+export type QuestionType = 'quiz' | 'truefalse' | 'wordcloud' | 'sort'
 
 export interface Question {
   text: string
@@ -28,6 +28,7 @@ export interface Player {
     correct: boolean
     points: number
     answeredAt: number
+    sortAnswer?: number[]
   }
 }
 
@@ -36,6 +37,16 @@ export interface TeamScore {
   avg: number
   total: number
   count: number
+}
+
+export interface GameHistory {
+  id: string
+  quizId: string
+  quizTitle: string
+  teacherId: string
+  date: number
+  playerCount: number
+  players: { name: string; emoji: string; team?: string; score: number; position: number }[]
 }
 
 export type RoomStatus = 'waiting' | 'question' | 'answer' | 'leaderboard' | 'finished'
@@ -50,5 +61,6 @@ export interface Room {
   hostId: string
   teamsMode?: boolean
   teams?: string[]
+  openAnswerEnabled?: boolean
   quiz?: Quiz
 }
