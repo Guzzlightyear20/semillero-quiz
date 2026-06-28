@@ -102,15 +102,31 @@ export default function HostPage() {
     <main className="sq-host-layout">
 
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
-        <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24,gap:12}}>
+        <div style={{minWidth:0}}>
           <p style={{fontSize:11,color:'var(--sq-muted)',margin:'0 0 3px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em'}}>Quiz activo</p>
-          <h1 style={{fontSize:18,fontWeight:800,margin:0}}>{quiz.title}</h1>
-          <p style={{fontSize:13,color:'var(--sq-muted)',margin:'2px 0 0'}}>{players.length} jugadores conectados</p>
+          <h1 style={{fontSize:18,fontWeight:800,margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{quiz.title}</h1>
+          <p style={{fontSize:13,color:'var(--sq-muted)',margin:'2px 0 0'}}>{players.length} jugadores · {room.currentQuestion + 1}/{quiz.questions.length} preguntas</p>
         </div>
-        <div className="sq-card" style={{padding:'8px 18px',textAlign:'center'}}>
-          <p style={{fontSize:10,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}}>Código</p>
-          <p style={{fontFamily:'monospace',fontWeight:900,fontSize:26,letterSpacing:'.15em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
+        <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+          {room.status !== 'waiting' && room.status !== 'finished' && (
+            <button
+              onClick={async () => {
+                if (!confirm('¿Terminar la partida ahora? Se calculará el ranking con los puntajes actuales.')) return
+                await finishRoom(roomId)
+                soundFinish()
+                const teacherId = JSON.parse(localStorage.getItem('teacher_session') ?? '{}').id ?? ''
+                await saveGameHistory(roomId, room.quizId, quiz.title, teacherId, players)
+              }}
+              style={{background:'rgba(248,113,113,.15)',border:'0.5px solid rgba(248,113,113,.4)',color:'#F87171',fontWeight:700,fontSize:13,padding:'8px 14px',borderRadius:10,cursor:'pointer',whiteSpace:'nowrap'}}
+            >
+              🏁 Terminar
+            </button>
+          )}
+          <div className="sq-card" style={{padding:'8px 18px',textAlign:'center'}}>
+            <p style={{fontSize:10,color:'var(--sq-muted)',margin:'0 0 2px',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em'}}>Código</p>
+            <p style={{fontFamily:'monospace',fontWeight:900,fontSize:26,letterSpacing:'.15em',color:'var(--sq-green)',margin:0}}>{room.code}</p>
+          </div>
         </div>
       </div>
 
