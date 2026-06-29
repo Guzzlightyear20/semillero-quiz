@@ -435,15 +435,17 @@ function EditorQuiz() {
             </>
           )}
 
-          {/* Importar desde texto */}
-          <ImportarTexto onImport={(qs) => {
-            setQuestions(prev => {
-              const current = prev.filter(q => q.text.trim())
-              const merged = [...current, ...qs]
-              setTimeout(() => setActive(current.length), 0)
-              return merged
-            })
-          }} />
+          {/* Importar desde texto — solo para quiz */}
+          {(q.type ?? 'quiz') === 'quiz' && (
+            <ImportarTexto onImport={(qs) => {
+              setQuestions(prev => {
+                const current = prev.filter(q => q.text.trim())
+                const merged = [...current, ...qs]
+                setTimeout(() => setActive(current.length), 0)
+                return merged
+              })
+            }} />
+          )}
         </div>
       </main>
     </div>
