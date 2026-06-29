@@ -56,7 +56,7 @@ export default function HostPage() {
 
   async function handleShowAnswers() {
     if (!room || !quiz) return
-    await showAnswers(roomId, quiz.questions[room.currentQuestion].correctIndex, players)
+    await showAnswers(roomId, quiz.questions[room.currentQuestion].correctIndex)
   }
 
   async function handleNext() {

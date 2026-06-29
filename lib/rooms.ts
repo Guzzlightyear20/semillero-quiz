@@ -140,9 +140,11 @@ export async function advanceToQuestion(roomId: string, questionIndex: number): 
   })
 }
 
-export async function showAnswers(roomId: string, correctIndex: number, players: Player[]): Promise<void> {
-  // Firestore batch limit = 500 ops. Split players into chunks of 499
-  // to leave 1 slot for the room status update in the last batch.
+export async function showAnswers(roomId: string, correctIndex: number): Promise<void> {
+  // Always fetch fresh players from Firestore to avoid stale closure issues
+  const snap = await getDocs(collection(db, 'rooms', roomId, 'players'))
+  const players = snap.docs.map(d => ({ id: d.id, ...d.data() } as Player))
+
   const CHUNK = 499
   const chunks: Player[][] = []
   for (let i = 0; i < players.length; i += CHUNK) {
@@ -163,7 +165,6 @@ export async function showAnswers(roomId: string, correctIndex: number, players:
       })
     }
 
-    // Include the room status update in the last batch — 1 round trip instead of 2
     if (isLast) {
       batch.update(doc(db, 'rooms', roomId), { status: 'answer' })
     }
@@ -171,7 +172,6 @@ export async function showAnswers(roomId: string, correctIndex: number, players:
     await batch.commit()
   }
 
-  // Edge case: no players at all
   if (players.length === 0) {
     await updateDoc(doc(db, 'rooms', roomId), { status: 'answer' })
   }
