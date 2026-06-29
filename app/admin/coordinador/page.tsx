@@ -105,7 +105,7 @@ export default function CoordinadorPage() {
               style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--sq-muted)',cursor:'pointer',fontSize:18,padding:4}}
               title={showCode ? 'Ocultar código' : 'Mostrar código'}
             >
-              {showCode ? '🙈' : '👁️'}
+              {showCode ? '🙈' : '🐵'}
             </button>
           </div>
           {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
