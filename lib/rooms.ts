@@ -65,7 +65,26 @@ export async function getQuizzesByHost(hostId: string): Promise<Quiz[]> {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Quiz))
 }
 
+async function cleanupFinishedRooms(hostId: string): Promise<void> {
+  const finished = await getDocs(
+    query(collection(db, 'rooms'), where('hostId', '==', hostId), where('status', '==', 'finished'))
+  )
+  await Promise.allSettled(
+    finished.docs.map(async (roomDoc) => {
+      const players = await getDocs(collection(db, 'rooms', roomDoc.id, 'players'))
+      const wordResponses = await getDocs(collection(db, 'rooms', roomDoc.id, 'wordResponses'))
+      const batch = writeBatch(db)
+      players.docs.forEach(p => batch.delete(p.ref))
+      wordResponses.docs.forEach(w => batch.delete(w.ref))
+      batch.delete(roomDoc.ref)
+      await batch.commit()
+    })
+  )
+}
+
 export async function createRoom(quizId: string, hostId: string, teams?: string[]): Promise<string> {
+  cleanupFinishedRooms(hostId).catch(() => {}) // fire and forget, don't block launch
+
   let code = generateCode()
 
   const existing = await getDocs(query(collection(db, 'rooms'), where('code', '==', code)))
