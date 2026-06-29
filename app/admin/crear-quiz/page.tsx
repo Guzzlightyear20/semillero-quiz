@@ -240,10 +240,13 @@ function EditorQuiz() {
             onClick={handleSave}
             disabled={saving || !title.trim()}
             style={{
-              background: saving || !title.trim() ? 'rgba(62,207,163,.3)' : 'var(--sq-green)',
-              color: '#0D4A38', fontWeight: 800, fontSize: 14,
-              padding: '8px 20px', borderRadius: 10, border: 'none',
-              cursor: saving || !title.trim() ? 'not-allowed' : 'pointer'
+              background: saving || !title.trim() ? 'rgba(62,207,163,.2)' : 'var(--sq-green)',
+              color: saving || !title.trim() ? 'rgba(62,207,163,.6)' : '#0D4A38',
+              fontWeight: 800, fontSize: 14,
+              padding: '8px 20px', borderRadius: 10,
+              border: '0.5px solid rgba(62,207,163,.3)',
+              cursor: saving || !title.trim() ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap'
             }}
           >
             {saving ? 'Guardando...' : `💾 Guardar`}
