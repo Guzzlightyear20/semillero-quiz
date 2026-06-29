@@ -246,7 +246,7 @@ function EditorQuiz() {
               cursor: saving || !title.trim() ? 'not-allowed' : 'pointer'
             }}
           >
-            {saving ? 'Guardando...' : editId ? `💾 Guardar (${questions.length}p)` : `💾 Guardar (${questions.length}p)`}
+            {saving ? 'Guardando...' : `💾 Guardar`}
           </button>
         </div>
 
