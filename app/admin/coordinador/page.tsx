@@ -9,6 +9,7 @@ const MASTER_CODE = process.env.NEXT_PUBLIC_MASTER_CODE ?? 'SEMILLERO-ADMIN'
 export default function CoordinadorPage() {
   const [authed, setAuthed] = useState(false)
   const [code, setCode] = useState('')
+  const [showCode, setShowCode] = useState(false)
   const [error, setError] = useState('')
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(false)
@@ -87,15 +88,26 @@ export default function CoordinadorPage() {
           <p style={{color:'var(--sq-muted)',fontSize:14,margin:0}}>Ingresá el código maestro</p>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-3">
-          <input
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            placeholder="Código maestro"
-            autoFocus
-            autoCapitalize="characters"
-            className="sq-input"
-            style={{textAlign:'center',fontSize:18,fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase'}}
-          />
+          <div style={{position:'relative'}}>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              placeholder="Código maestro"
+              type={showCode ? 'text' : 'password'}
+              autoFocus
+              autoCapitalize="characters"
+              className="sq-input"
+              style={{textAlign:'center',fontSize:18,fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase',paddingRight:48}}
+            />
+            <button
+              type="button"
+              onClick={() => setShowCode(v => !v)}
+              style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--sq-muted)',cursor:'pointer',fontSize:18,padding:4}}
+              title={showCode ? 'Ocultar código' : 'Mostrar código'}
+            >
+              {showCode ? '🙈' : '👁️'}
+            </button>
+          </div>
           {error && <p style={{color:'#F87171',fontSize:13,textAlign:'center',margin:0}}>{error}</p>}
           <button type="submit" className="sq-btn-primary">Entrar →</button>
         </form>
